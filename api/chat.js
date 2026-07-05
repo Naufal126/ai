@@ -11,8 +11,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Menggunakan model Lite dengan limit yang longgar
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;      
+        // PERBAIKAN 1: Ubah model menjadi gemini-1.5-flash
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+
         const parts = [];
         
         if (prompt) {
@@ -30,21 +31,17 @@ export default async function handler(req, res) {
             });
         }
 
+        // PERBAIKAN 2: Ubah geminiUrl menjadi endpoint
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 systemInstruction: {
                     parts: [{ 
-                        // 🔥 NAMA SEKARANG SUDAH BERUBAH MENJADI BIBEL AI 🔥
-                        text: "Namamu adalah Bibel AI, sebuah AI asisten virtual. Penciptamu bernama Naufal. Jika pengguna memanggil namamu atau menyapamu (misalnya 'Halo Bibel', 'Hai Bibel AI', dll), sapalah mereka kembali dengan ramah dan perkenalkan dirimu sebagai Bibel AI. Namun, jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.'" 
+                        text: "Namamu adalah Bibel Ai, sebuah AI asisten virtual. Penciptamu bernama Naufal. Jika pengguna memanggil namamu atau menyapamu (misalnya 'Halo Bibel', 'Hai', dll), sapalah mereka kembali dengan ramah dan perkenalkan dirimu sebagai Bibel. Namun, jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.'" 
                     }]
                 },
-                contents: [{ parts: parts }],
-                // Google Search Grounding agar Bibel AI bisa googling secara real-time
-                tools: [{
-                    googleSearch: {} 
-                }]
+                contents: [{ parts: parts }]
             })
         });
 
