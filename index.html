@@ -650,22 +650,44 @@
         if (data.error) {
             tambahPesan("Error: " + data.error, 'ai');
         } else {
-            // --- PERUBAHANNYA ADA DI SINI ---
-            // Kita cek apakah Vercel mengirimkan properti imageUrl (mode gambar)
+            // 1. Tampilkan teks balasan dari Bibel AI dulu
+            tambahPesan(data.reply, 'ai');
+
+            // 2. --- TRIK SUNTIK GAMBAR LANGSUNG ---
+            // Jika backend mengirimkan imageUrl, kita buat elemen <img> secara mandiri
             if (data.imageUrl) {
-                // Masukkan imageUrl sebagai parameter ketiga agar muncul di chat bubble AI
-                tambahPesan(data.reply, 'ai', data.imageUrl);
-            } else {
-                // Jika tidak ada gambar, tampilkan teks biasa
-                tambahPesan(data.reply, 'ai');
+                // Mencari elemen container chat kamu secara otomatis
+                const container = document.getElementById('chat-container') || 
+                                  document.getElementById('chat-box') || 
+                                  document.querySelector('.chat-container');
+                
+                if (container) {
+                    // Buat gelembung chat baru khusus untuk gambar
+                    const bubbleGambar = document.createElement('div');
+                    
+                    // Samakan class-nya dengan pesan AI biasa agar posisinya pas (rata kiri)
+                    bubbleGambar.className = 'pesan ai'; 
+                    bubbleGambar.style.marginTop = '8px';
+                    bubbleGambar.style.padding = '5px';
+                    bubbleGambar.style.backgroundColor = 'transparent'; // Biar tidak dobel background warna kotak teks
+                    
+                    // Masukkan tag image ke dalam gelembung chat
+                    bubbleGambar.innerHTML = `<img src="${data.imageUrl}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: block;" alt="Gambar dari Bibel AI">`;
+                    
+                    // Masukkan gelembung gambar ke dalam room chat
+                    container.appendChild(bubbleGambar);
+                    
+                    // Paksa scroll langsung meluncur ke paling bawah agar gambar langsung terlihat
+                    container.scrollTop = container.scrollHeight;
+                }
             }
-            // --------------------------------
         }
     } catch (error) {
         hapusLoading();
         tambahPesan("Gagal menghubungi server. Pastikan API Vercel berjalan.", 'ai');
     }
 }
+
 
     </script>
 </body>
