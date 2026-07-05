@@ -14,11 +14,12 @@ export default async function handler(req, res) {
         // --- 1. DETEKSI APAKAH USER MINTA DIBUATKAN GAMBAR ---
         const teks = prompt ? prompt.toLowerCase() : "";
         
-        // Deteksi yang lebih pintar untuk menangkap berbagai variasi kata
+        // Deteksi yang lebih luas agar menangkap semua variasi kata gambar
         const mintaGambar = teks.includes("buatkan gambar") || 
                             teks.includes("generate gambar") || 
                             teks.includes("bikin gambar") ||
                             teks.includes("gambarin") ||
+                            teks.includes("buat gambar") ||
                             (teks.includes("gambar") && teks.includes("bisa")) || 
                             teks.startsWith("gambar ");
 
@@ -26,26 +27,27 @@ export default async function handler(req, res) {
             // --- LOGIKA GENERATE GAMBAR (IMAGEN 4 FAST GENERATE) ---
             const imagenEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`;
             
-            // Kita bersihkan prompt agar AI tidak bingung dan memicu teks JSON tool-calling
+            // PERBAIKAN UTAMA: Bersihkan prompt secara total dari instruksi/kata kerja pemicu tool calling
             const promptBersih = prompt
                 .replace(/buatkan gambar/gi, "")
                 .replace(/generate gambar/gi, "")
                 .replace(/bikin gambar/gi, "")
+                .replace(/buat gambar/gi, "")
                 .replace(/gambarin/gi, "")
+                .replace(/gambar/gi, "") // Hapus kata "gambar" agar tidak memicu deteksi tool-calling di AI Studio
+                .replace(/bisa ga/gi, "")
+                .replace(/bisa/gi, "")
                 .trim();
 
             const response = await fetch(imagenEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    instances: [{ 
-                        // Menggunakan prompt bersih agar fokus pada objek yang mau digambar
-                        prompt: promptBersih || prompt 
-                    }],
+                    // Pastikan kita mengirim promptBersih yang murni berisi objek gambar saja (misal: "ikan")
+                    instances: [{ prompt: promptBersih || prompt }], 
                     parameters: { 
                         sampleCount: 1,
-                        // Solusi anti-tool-calling: Menegaskan hasil harus berupa data gambar, bukan teks
-                        outputMimeType: "image/jpeg" 
+                        outputMimeType: "image/jpeg"
                     }
                 })
             });
@@ -56,7 +58,7 @@ export default async function handler(req, res) {
                 return res.status(500).json({ error: data.error.message });
             }
 
-            // Jika berhasil membuat gambar, kita ubah Base64 menjadi Data URL dan kirim ke frontend
+            // Jika berhasil membuat gambar, kirim Data URL ke frontend
             if (data.predictions && data.predictions.length > 0) {
                 const base64Image = data.predictions[0].bytesBase64Encoded;
                 const imageUrl = `data:image/jpeg;base64,${base64Image}`;
