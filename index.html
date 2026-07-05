@@ -653,36 +653,32 @@
             // 1. Tampilkan teks balasan dari Bibel AI dulu
             tambahPesan(data.reply, 'ai');
 
-            // 2. --- TRIK SUNTIK GAMBAR LANGSUNG (UKURAN SUDAH DISESUAIKAN) ---
+            // 2. --- TRIK MEMASUKKAN GAMBAR KE DALAM BUBBLE YANG SAMA ---
             if (data.imageUrl) {
-                // Mencari elemen container chat kamu secara otomatis
                 const container = document.getElementById('chat-container') || 
                                   document.getElementById('chat-box') || 
                                   document.querySelector('.chat-container');
                 
                 if (container) {
-                    // Buat gelembung chat baru khusus untuk gambar
-                    const bubbleGambar = document.createElement('div');
+                    // Cari kotak pesan AI yang baru saja dibuat di atas
+                    const pesanTerakhir = container.lastElementChild;
                     
-                    // Samakan class-nya dengan pesan AI biasa agar posisinya pas (rata kiri)
-                    bubbleGambar.className = 'pesan ai'; 
-                    bubbleGambar.style.marginTop = '4px';
-                    bubbleGambar.style.padding = '0px';
-                    bubbleGambar.style.backgroundColor = 'transparent'; // Biar tidak dobel background warna kotak teks
-                    bubbleGambar.style.boxShadow = 'none'; // Menghilangkan shadow bubble bawaan CSS agar tidak double
-
-                    // DI SINI PERUBAHANNYA: max-width diset 70% dan width 260px supaya pas dan tidak kebesaran
-                    bubbleGambar.innerHTML = `
-                        <img src="${data.imageUrl}" 
-                             style="max-width: 70%; width: 260px; height: auto; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: block;" 
-                             alt="Gambar dari Bibel AI">
-                    `;
-                    
-                    // Masukkan gelembung gambar ke dalam room chat
-                    container.appendChild(bubbleGambar);
-                    
-                    // Paksa scroll langsung meluncur ke paling bawah agar gambar langsung terlihat
-                    container.scrollTop = container.scrollHeight;
+                    if (pesanTerakhir) {
+                        // Buat elemen gambar
+                        const img = document.createElement('img');
+                        img.src = data.imageUrl;
+                        img.alt = "Gambar dari Bibel AI";
+                        // Styling agar gambar pas (tidak kebesaran) dan ada jarak dari teks
+                        img.style.cssText = "max-width: 100%; width: 260px; height: auto; border-radius: 8px; display: block; margin-top: 10px;";
+                        
+                        // Suntikkan gambar LANGSUNG ke dalam kotak pesan teks tersebut
+                        pesanTerakhir.appendChild(img);
+                        
+                        // Paksa scroll ke bawah agar gambar langsung terlihat
+                        setTimeout(() => {
+                            container.scrollTop = container.scrollHeight;
+                        }, 100);
+                    }
                 }
             }
         }
