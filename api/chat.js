@@ -1,3 +1,4 @@
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -14,7 +15,6 @@ export default async function handler(req, res) {
         // --- 1. DETEKSI APAKAH USER MINTA DIBUATKAN GAMBAR ---
         const teks = prompt ? prompt.toLowerCase() : "";
         
-        // Deteksi yang lebih luas agar menangkap semua variasi kata gambar
         const mintaGambar = teks.includes("buatkan gambar") || 
                             teks.includes("generate gambar") || 
                             teks.includes("bikin gambar") ||
@@ -24,55 +24,32 @@ export default async function handler(req, res) {
                             teks.startsWith("gambar ");
 
         if (mintaGambar) {
-            // --- LOGIKA GENERATE GAMBAR (IMAGEN 4 FAST GENERATE) ---
-            const imagenEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`;
+            // --- LOGIKA GENERATE GAMBAR GRATIS (VIA POLLINATIONS.AI) ---
             
-            // PERBAIKAN UTAMA: Bersihkan prompt secara total dari instruksi/kata kerja pemicu tool calling
+            // Bersihkan prompt agar hanya tersisa objek yang mau digambar
             const promptBersih = prompt
                 .replace(/buatkan gambar/gi, "")
                 .replace(/generate gambar/gi, "")
                 .replace(/bikin gambar/gi, "")
                 .replace(/buat gambar/gi, "")
                 .replace(/gambarin/gi, "")
-                .replace(/gambar/gi, "") // Hapus kata "gambar" agar tidak memicu deteksi tool-calling di AI Studio
+                .replace(/gambar/gi, "") 
                 .replace(/bisa ga/gi, "")
                 .replace(/bisa/gi, "")
                 .trim();
 
-            const response = await fetch(imagenEndpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    // Pastikan kita mengirim promptBersih yang murni berisi objek gambar saja (misal: "ikan")
-                    instances: [{ prompt: promptBersih || prompt }], 
-                    parameters: { 
-                        sampleCount: 1,
-                        outputMimeType: "image/jpeg"
-                    }
-                })
+            // Gunakan API publik Pollinations yang 100% gratis dan tanpa API Key
+            // encodeURIComponent digunakan agar spasi dan teks aman dimasukkan ke dalam link URL
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptBersih)}?width=1024&height=1024&nologo=true`;
+
+            // Langsung kirim URL gambar tersebut ke frontend!
+            return res.status(200).json({ 
+                reply: "Ini gambar yang kamu minta, spesial dari Bibel:", 
+                imageUrl: imageUrl 
             });
 
-            const data = await response.json();
-
-            if (data.error) {
-                return res.status(500).json({ error: data.error.message });
-            }
-
-            // Jika berhasil membuat gambar, kirim Data URL ke frontend
-            if (data.predictions && data.predictions.length > 0) {
-                const base64Image = data.predictions[0].bytesBase64Encoded;
-                const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-                
-                return res.status(200).json({ 
-                    reply: "Ini gambar yang kamu minta, spesial dari Bibel:", 
-                    imageUrl: imageUrl 
-                });
-            } else {
-                return res.status(500).json({ error: "Gagal membuat gambar dari AI Studio." });
-            }
-
         } else {
-            // --- LOGIKA CHAT & VISION ASLI KAMU (GEMINI FLASH LITE) ---
+            // --- LOGIKA CHAT & VISION (GEMINI FLASH LITE - TETAP GRATIS) ---
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
             const parts = [];
@@ -116,6 +93,6 @@ export default async function handler(req, res) {
         }
         
     } catch (error) {
-        return res.status(500).json({ error: 'Terjadi kesalahan saat memproses ke AI Studio.' });
+        return res.status(500).json({ error: 'Terjadi kesalahan saat memproses.' });
     }
 }
