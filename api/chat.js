@@ -11,7 +11,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;      
+        // PERBAIKAN 1: Ubah model menjadi gemini-1.5-flash
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+
         const parts = [];
         
         if (prompt) {
@@ -29,14 +31,14 @@ export default async function handler(req, res) {
             });
         }
 
-        const response = await fetch(geminiUrl, {
+        // PERBAIKAN 2: Ubah geminiUrl menjadi endpoint
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                // SYSTEM INSTRUCTION DIUPDATE DI SINI
                 systemInstruction: {
                     parts: [{ 
-                        text: "Namamu adalah Zerotwo, sebuah AI asisten virtual. Penciptamu bernama Naufal. Jika pengguna memanggil namamu atau menyapamu (misalnya 'Halo Zerotwo', 'Hai', dll), sapalah mereka kembali dengan ramah dan perkenalkan dirimu sebagai Zerotwo. Namun, jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.'" 
+                        text: "Namamu adalah Bibel Ai, sebuah AI asisten virtual. Penciptamu bernama Naufal. Jika pengguna memanggil namamu atau menyapamu (misalnya 'Halo Zerotwo', 'Hai', dll), sapalah mereka kembali dengan ramah dan perkenalkan dirimu sebagai Zerotwo. Namun, jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.'" 
                     }]
                 },
                 contents: [{ parts: parts }]
