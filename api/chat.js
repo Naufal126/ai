@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
     try {
         // PERBAIKAN 1: Ubah model menjadi gemini-1.5-flash
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
         const parts = [];
         
