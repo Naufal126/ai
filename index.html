@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI by Naufal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Sama seperti sebelumnya... */
+        :root {
+            --bg-color: #050505; 
+            --container-bg: #111111;
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            --accent-color: #3b82f6;
+            --user-bubble: #2563eb;
+            --ai-bubble: #1a1a1a;
+            --border-color: #222222;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; position: relative; }
+        
+        .glow-bg { position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 0; pointer-events: none; }
+        
+        #landing-page { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; animation: fadeIn 1s ease-out; width: 100%; height: 100%; z-index: 1; }
+        .brand-title { font-size: 4rem; font-weight: 800; letter-spacing: -2px; margin-bottom: 10px; background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand-title span { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: var(--text-muted); font-size: 1.1rem; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 50px; }
+        .start-btn { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); color: white; padding: 16px 36px; font-size: 1.1rem; font-weight: 500; border-radius: 50px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: all 0.4s; margin-bottom: 40px; }
+        .start-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); transform: translateY(-5px); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.2); }
+        .portfolio-link { color: #555; text-decoration: none; font-size: 0.95rem; bottom: 40px; position: absolute; display: flex; align-items: center; gap: 8px; }
+        
+        .chat-container { width: 100%; max-width: 850px; height: 90vh; background-color: rgba(17, 17, 17, 0.7); backdrop-filter: blur(20px); border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); display: none; flex-direction: column; overflow: hidden; border: 1px solid var(--border-color); z-index: 1; }
+        .chat-header { padding: 20px; text-align: center; border-bottom: 1px solid var(--border-color); }
+        .chat-header h2 { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .chat-history { flex-grow: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; scroll-behavior: smooth; }
+        .chat-history::-webkit-scrollbar { width: 4px; }
+        .chat-history::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        
+        .message { max-width: 80%; padding: 16px 20px; border-radius: 18px; line-height: 1.6; font-size: 0.95rem; word-wrap: break-word; animation: slideUp 0.4s ease-out; }
+        .message.user { align-self: flex-end; background-color: var(--user-bubble); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
+        .message.ai { align-self: flex-start; background-color: var(--ai-bubble); color: var(--text-main); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
+        
+        /* CSS TAMBAHAN UNTUK FITUR GAMBAR */
+        .message img { max-width: 100%; border-radius: 12px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .image-preview-container { padding: 10px 30px; display: none; border-top: 1px solid var(--border-color); background-color: rgba(0,0,0,0.2); }
+        .image-preview-box { position: relative; display: inline-block; }
+        .image-preview-box img { max-height: 80px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .remove-img-btn { position: absolute; top: -8px; right: -8px; background-color: #ef4444; color: white; border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; justify-content: center; align-items: center; }
+        
+        .input-area { padding: 20px 30px; display: flex; gap: 15px; align-items: center; border-top: 1px solid var(--border-color); }
+        .input-area input[type="text"] { flex-grow: 1; padding: 16px 24px; border-radius: 30px; border: 1px solid var(--border-color); background-color: rgba(255, 255, 255, 0.03); color: var(--text-main); outline: none; transition: all 0.3s; }
+        .input-area input[type="text"]:focus { border-color: rgba(255, 255, 255, 0.2); }
+        
+        .icon-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 10px; border-radius: 50%; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .icon-btn:hover { background-color: rgba(255,255,255,0.05); color: var(--text-main); }
+        
+        .send-btn { background-color: var(--text-main); color: var(--bg-color); border: none; width: 52px; height: 52px; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .send-btn:hover { transform: scale(1.05); }
+
+        .typing-indicator { display: flex; gap: 6px; padding: 16px 20px; background-color: var(--ai-bubble); border-radius: 18px; border-bottom-left-radius: 4px; border: 1px solid var(--border-color); align-self: flex-start; align-items: center; }
+        .dot { width: 6px; height: 6px; background-color: var(--text-muted); border-radius: 50%; animation: blink 1.4s infinite both; }
+        .dot:nth-child(1) { animation-delay: 0.2s; } .dot:nth-child(2) { animation-delay: 0.4s; } .dot:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes blink { 0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); } 40% { opacity: 1; transform: scale(1.2); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="glow-bg"></div>
+
+    <!-- LANDING PAGE -->
+    <div id="landing-page">
+        <h1 class="brand-title">ai by <span>naufal</span></h1>
+        <p class="subtitle">Personal Assistant</p>
+        <button class="start-btn" onclick="masukKeChat()">Mulai Percakapan</button>
+    </div>
+
+    <!-- CHAT SECTION -->
+    <div class="chat-container" id="chat-section">
+        <div class="chat-header">
+            <h2>ai by naufal</h2>
+        </div>
+        
+        <div class="chat-history" id="chat-history">
+            <div class="message ai">Halo! Kirimkan gambar atau teks, dan aku akan membantumu.</div>
+        </div>
+        
+        <!-- Area Preview Gambar Sebelum Dikirim -->
+        <div class="image-preview-container" id="preview-container">
+            <div class="image-preview-box">
+                <img id="preview-img" src="" alt="Preview">
+                <button class="remove-img-btn" onclick="hapusGambar()">✕</button>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <!-- Input File Disembunyikan -->
+            <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+            
+            <!-- Tombol Penjepit Kertas (Upload) -->
+            <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Unggah Gambar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+            </button>
+
+            <input type="text" id="prompt" placeholder="Ketik pesan atau tanya tentang gambar..." onkeypress="handleEnter(event)">
+            
+            <!-- Tombol Kirim -->
+            <button class="send-btn" onclick="kirimPesan()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function masukKeChat() {
+            document.getElementById('landing-page').style.display = 'none';
+            document.getElementById('chat-section').style.display = 'flex';
+        }
+
+        const chatHistory = document.getElementById('chat-history');
+        const promptInput = document.getElementById('prompt');
+        let selectedImageData = null; // Menyimpan data gambar sementara
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') kirimPesan();
+        }
+
+        // Fungsi saat file dipilih
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                const base64Data = dataUrl.split(',')[1]; // Mengambil kode base64 saja
+                
+                selectedImageData = {
+                    mimeType: file.type,
+                    base64Data: base64Data,
+                    dataUrl: dataUrl // Untuk ditampilkan di preview
+                };
+
+                document.getElementById('preview-img').src = dataUrl;
+                document.getElementById('preview-container').style.display = 'block';
+            };
+            reader.readAsDataURL(file); // Konversi ke Base64
+        }
+
+        // Fungsi untuk membatalkan gambar yang dipilih
+        function hapusGambar() {
+            selectedImageData = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('preview-container').style.display = 'none';
+        }
+
+        // Modifikasi fungsi tambah pesan agar bisa nampilin gambar di chat history
+        function tambahPesan(teks, pengirim, imgUrl = null) {
+            const div = document.createElement('div');
+            div.className = `message ${pengirim}`;
+            
+            // Jika ada gambar, tambahkan tag <img>
+            if (imgUrl) {
+                const img = document.createElement('img');
+                img.src = imgUrl;
+                div.appendChild(img);
+            }
+            
+            // Jika ada teks, tambahkan elemen span
+            if (teks) {
+                const span = document.createElement('span');
+                span.innerHTML = teks.replace(/\n/g, '<br>'); // Biar enter (\n) terbaca
+                div.appendChild(span);
+            }
+
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function tampilkanLoading() {
+            const div = document.createElement('div');
+            div.className = 'typing-indicator'; div.id = 'loading';
+            div.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function hapusLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }
+
+        async function kirimPesan() {
+            const teks = promptInput.value.trim();
+            
+            // Cegah pengiriman jika tidak ada teks dan tidak ada gambar
+            if (!teks && !selectedImageData) return;
+
+            // Munculkan pesan user (dengan gambar jika ada)
+            tambahPesan(teks, 'user', selectedImageData ? selectedImageData.dataUrl : null);
+            
+            // Siapkan payload
+            const payload = { prompt: teks };
+            if (selectedImageData) {
+                payload.image = {
+                    mimeType: selectedImageData.mimeType,
+                    base64Data: selectedImageData.base64Data
+                };
+            }
+
+            // Bersihkan input setelah diklik kirim
+            promptInput.value = '';
+            hapusGambar();
+            tampilkanLoading();
+
+            try {
+                // Tembak ke API Vercel
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                hapusLoading();
+
+                if (data.error) {
+                    tambahPesan("Error: " + data.error, 'ai');
+                } else {
+                    tambahPesan(data.reply, 'ai');
+                }
+            } catch (error) {
+                hapusLoading();
+                tambahPesan("Gagal menghubungi server. Pastikan API Vercel berjalan.", 'ai');
+            }
+        }
+    </script>
+</body>
+</html>
