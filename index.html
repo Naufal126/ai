@@ -653,8 +653,7 @@
             // 1. Tampilkan teks balasan dari Bibel AI dulu
             tambahPesan(data.reply, 'ai');
 
-            // 2. --- TRIK SUNTIK GAMBAR LANGSUNG ---
-            // Jika backend mengirimkan imageUrl, kita buat elemen <img> secara mandiri
+            // 2. --- TRIK SUNTIK GAMBAR LANGSUNG (UKURAN SUDAH DISESUAIKAN) ---
             if (data.imageUrl) {
                 // Mencari elemen container chat kamu secara otomatis
                 const container = document.getElementById('chat-container') || 
@@ -667,12 +666,17 @@
                     
                     // Samakan class-nya dengan pesan AI biasa agar posisinya pas (rata kiri)
                     bubbleGambar.className = 'pesan ai'; 
-                    bubbleGambar.style.marginTop = '8px';
-                    bubbleGambar.style.padding = '5px';
+                    bubbleGambar.style.marginTop = '4px';
+                    bubbleGambar.style.padding = '0px';
                     bubbleGambar.style.backgroundColor = 'transparent'; // Biar tidak dobel background warna kotak teks
-                    
-                    // Masukkan tag image ke dalam gelembung chat
-                    bubbleGambar.innerHTML = `<img src="${data.imageUrl}" style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: block;" alt="Gambar dari Bibel AI">`;
+                    bubbleGambar.style.boxShadow = 'none'; // Menghilangkan shadow bubble bawaan CSS agar tidak double
+
+                    // DI SINI PERUBAHANNYA: max-width diset 70% dan width 260px supaya pas dan tidak kebesaran
+                    bubbleGambar.innerHTML = `
+                        <img src="${data.imageUrl}" 
+                             style="max-width: 70%; width: 260px; height: auto; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); display: block;" 
+                             alt="Gambar dari Bibel AI">
+                    `;
                     
                     // Masukkan gelembung gambar ke dalam room chat
                     container.appendChild(bubbleGambar);
