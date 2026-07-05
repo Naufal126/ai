@@ -12,11 +12,15 @@ export default async function handler(req, res) {
 
     try {
         // --- 1. DETEKSI APAKAH USER MINTA DIBUATKAN GAMBAR ---
-        // Kita cek dulu apakah prompt ada (tidak null) sebelum menjalankan toLowerCase()
-        const mintaGambar = prompt && (
-            prompt.toLowerCase().includes("buatkan gambar") || 
-            prompt.toLowerCase().includes("generate gambar")
-        );
+        const teks = prompt ? prompt.toLowerCase() : "";
+        
+        // Deteksi yang lebih pintar untuk menangkap berbagai variasi kata
+        const mintaGambar = teks.includes("buatkan gambar") || 
+                            teks.includes("generate gambar") || 
+                            teks.includes("bikin gambar") ||
+                            teks.includes("gambarin") ||
+                            (teks.includes("gambar") && teks.includes("bisa")) || 
+                            teks.startsWith("gambar ");
 
         if (mintaGambar) {
             // --- LOGIKA GENERATE GAMBAR (IMAGEN 3) ---
