@@ -39,6 +39,12 @@ export default async function handler(req, res) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                // INI RAHASIANYA: System Instruction untuk memberitahu identitas AI
+                systemInstruction: {
+                    parts: [{ 
+                        text: "Identitasmu adalah AI asisten virtual. Penciptamu bernama Naufal. Jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.'" 
+                    }]
+                },
                 contents: [{ parts: parts }]
             })
         });
