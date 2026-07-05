@@ -1,4 +1,3 @@
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -23,37 +22,34 @@ export default async function handler(req, res) {
                             (teks.includes("gambar") && teks.includes("bisa")) || 
                             teks.startsWith("gambar ");
 
+        // Fungsi pembantu untuk membersihkan prompt teks
+        const dapatkanPromptBersih = (p) => {
+            return p.replace(/buatkan gambar/gi, "")
+                    .replace(/generate gambar/gi, "")
+                    .replace(/bikin gambar/gi, "")
+                    .replace(/buat gambar/gi, "")
+                    .replace(/gambarin/gi, "")
+                    .replace(/gambar/gi, "") 
+                    .replace(/bisa ga/gi, "")
+                    .replace(/bisa/gi, "")
+                    .trim();
+        };
+
         if (mintaGambar) {
             // --- LOGIKA GENERATE GAMBAR GRATIS (VIA POLLINATIONS.AI) ---
-            
-            // Bersihkan prompt agar hanya tersisa objek yang mau digambar
-            const promptBersih = prompt
-                .replace(/buatkan gambar/gi, "")
-                .replace(/generate gambar/gi, "")
-                .replace(/bikin gambar/gi, "")
-                .replace(/buat gambar/gi, "")
-                .replace(/gambarin/gi, "")
-                .replace(/gambar/gi, "") 
-                .replace(/bisa ga/gi, "")
-                .replace(/bisa/gi, "")
-                .trim();
-
-            // Gunakan API publik Pollinations yang 100% gratis dan tanpa API Key
-            // encodeURIComponent digunakan agar spasi dan teks aman dimasukkan ke dalam link URL
+            const promptBersih = dapatkanPromptBersih(prompt);
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptBersih)}?width=1024&height=1024&nologo=true`;
 
-            // Langsung kirim URL gambar tersebut ke frontend!
             return res.status(200).json({ 
                 reply: "Ini gambar yang kamu minta, spesial dari Bibel:", 
                 imageUrl: imageUrl 
             });
 
         } else {
-            // --- LOGIKA CHAT & VISION (GEMINI FLASH LITE - TETAP GRATIS) ---
+            // --- LOGIKA CHAT & VISION (GEMINI FLASH LITE) ---
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
             const parts = [];
-            
             if (prompt) {
                 parts.push({ text: prompt });
             } else if (!prompt && image) {
@@ -75,7 +71,7 @@ export default async function handler(req, res) {
                 body: JSON.stringify({
                     systemInstruction: {
                         parts: [{ 
-                            text: "Namamu adalah Bibel Ai, sebuah AI asisten virtual. Penciptamu bernama Naufal. Jika pengguna memanggil namamu atau menyapamu (misalnya 'Halo Bibel', 'Hai', dll), sapalah mereka kembali dengan ramah dan perkenalkan dirimu sebagai Bibel. Namun, jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.'" 
+                            text: "Namamu adalah Bibel Ai, sebuah AI asisten virtual. Penciptamu bernama Naufal. Jika pengguna memanggil namamu atau menyapamu (misalnya 'Halo Bibel', 'Hai', dll), sapalah mereka kembali dengan ramah dan perkenalkan dirimu sebagai Bibel. Namun, jika ada pengguna yang bertanya siapa yang menciptakanmu, siapa pembuatmu, atau hal terkait developer-mu, kamu WAJIB menjawab persis dengan kalimat ini dan tidak boleh diubah sedikitpun: 'Saya diciptakan oleh Naufal. Saya adalah model bahasa besar yang dikembangkan untuk membantu Anda menjawab pertanyaan, menulis, belajar, dan melakukan berbagai tugas lainnya.' PENTING: Kamu tidak bisa membuat gambar. Jika user meminta gambar dan lolos ke sini, jangan pernah mengeluarkan format JSON atau tool calling dalle!" 
                         }]
                     },
                     contents: [{ parts: parts }]
@@ -89,6 +85,21 @@ export default async function handler(req, res) {
             }
 
             const replyText = data.candidates[0].content.parts[0].text;
+
+            // --- 🛡️ SISTEM PENGAMAN ANTI-BOCOOR (FALLBACK SAFETY) 🛡️ ---
+            // Jika Gemini Flash tidak sengaja 'bocor' mengeluarkan teks JSON tool-calling DALL-E...
+            if (replyText.includes("dalle.text2im") || replyText.includes("action_input") || replyText.includes("action")) {
+                // Kita cegat teks JSON tersebut, lalu kita alihkan paksa ke sistem gambar Pollinations!
+                const promptBersih = dapatkanPromptBersih(prompt);
+                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptBersih)}?width=1024&height=1024&nologo=true`;
+                
+                return res.status(200).json({ 
+                    reply: "Ini gambar yang kamu minta, spesial dari Bibel:", 
+                    imageUrl: imageUrl 
+                });
+            }
+
+            // Jika responsnya teks normal, kirim seperti biasa
             return res.status(200).json({ reply: replyText });
         }
         
