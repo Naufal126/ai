@@ -23,15 +23,30 @@ export default async function handler(req, res) {
                             teks.startsWith("gambar ");
 
         if (mintaGambar) {
-            // --- LOGIKA GENERATE GAMBAR (IMAGEN 3) ---
+            // --- LOGIKA GENERATE GAMBAR (IMAGEN 4 FAST GENERATE) ---
             const imagenEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`;
             
+            // Kita bersihkan prompt agar AI tidak bingung dan memicu teks JSON tool-calling
+            const promptBersih = prompt
+                .replace(/buatkan gambar/gi, "")
+                .replace(/generate gambar/gi, "")
+                .replace(/bikin gambar/gi, "")
+                .replace(/gambarin/gi, "")
+                .trim();
+
             const response = await fetch(imagenEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    instances: [{ prompt: prompt }],
-                    parameters: { sampleCount: 1 }
+                    instances: [{ 
+                        // Menggunakan prompt bersih agar fokus pada objek yang mau digambar
+                        prompt: promptBersih || prompt 
+                    }],
+                    parameters: { 
+                        sampleCount: 1,
+                        // Solusi anti-tool-calling: Menegaskan hasil harus berupa data gambar, bukan teks
+                        outputMimeType: "image/jpeg" 
+                    }
                 })
             });
 
@@ -41,7 +56,7 @@ export default async function handler(req, res) {
                 return res.status(500).json({ error: data.error.message });
             }
 
-            // Jika berhasil membuat gambar, kita ubah Base64 menjadi URL dan kirim ke frontend
+            // Jika berhasil membuat gambar, kita ubah Base64 menjadi Data URL dan kirim ke frontend
             if (data.predictions && data.predictions.length > 0) {
                 const base64Image = data.predictions[0].bytesBase64Encoded;
                 const imageUrl = `data:image/jpeg;base64,${base64Image}`;
