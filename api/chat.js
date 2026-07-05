@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
         
         // Menyusun isi pesan (teks saja atau teks + gambar)
         const parts = [];
