@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
         if (mintaGambar) {
             // --- LOGIKA GENERATE GAMBAR (IMAGEN 3) ---
-            const imagenEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`;
+            const imagenEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${apiKey}`;
             
             const response = await fetch(imagenEndpoint, {
                 method: 'POST',
