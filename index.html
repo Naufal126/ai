@@ -620,43 +620,53 @@
         });
 
         async function kirimPesan() {
-            const teks = promptInput.value.trim();
-            if (!teks && !selectedImageData) return;
+    const teks = promptInput.value.trim();
+    if (!teks && !selectedImageData) return;
 
-            tambahPesan(teks, 'user', selectedImageData ? selectedImageData.dataUrl : null);
-            
-            const payload = { prompt: teks };
-            if (selectedImageData) {
-                payload.image = {
-                    mimeType: selectedImageData.mimeType,
-                    base64Data: selectedImageData.base64Data
-                };
+    tambahPesan(teks, 'user', selectedImageData ? selectedImageData.dataUrl : null);
+    
+    const payload = { prompt: teks };
+    if (selectedImageData) {
+        payload.image = {
+            mimeType: selectedImageData.mimeType,
+            base64Data: selectedImageData.base64Data
+        };
+    }
+
+    promptInput.value = '';
+    hapusGambar();
+    tampilkanLoading();
+
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        hapusLoading();
+
+        if (data.error) {
+            tambahPesan("Error: " + data.error, 'ai');
+        } else {
+            // --- PERUBAHANNYA ADA DI SINI ---
+            // Kita cek apakah Vercel mengirimkan properti imageUrl (mode gambar)
+            if (data.imageUrl) {
+                // Masukkan imageUrl sebagai parameter ketiga agar muncul di chat bubble AI
+                tambahPesan(data.reply, 'ai', data.imageUrl);
+            } else {
+                // Jika tidak ada gambar, tampilkan teks biasa
+                tambahPesan(data.reply, 'ai');
             }
-
-            promptInput.value = '';
-            hapusGambar();
-            tampilkanLoading();
-
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-                hapusLoading();
-
-                if (data.error) {
-                    tambahPesan("Error: " + data.error, 'ai');
-                } else {
-                    tambahPesan(data.reply, 'ai');
-                }
-            } catch (error) {
-                hapusLoading();
-                tambahPesan("Gagal menghubungi server. Pastikan API Vercel berjalan.", 'ai');
-            }
+            // --------------------------------
         }
+    } catch (error) {
+        hapusLoading();
+        tambahPesan("Gagal menghubungi server. Pastikan API Vercel berjalan.", 'ai');
+    }
+}
+
     </script>
 </body>
 </html>
