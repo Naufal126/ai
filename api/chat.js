@@ -35,7 +35,7 @@ export default async function handler(req, res) {
             const promptBersih = dapatkanPromptBersih(prompt);
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
-            // --- JALUR MURNI SEGMIND (TANPA FALLBACK) ---
+            // --- JALUR MURNI SEGMIND (FLUX.1) ---
             try {
                 const segmindEndpoint = "https://api.segmind.com/v1/fast-flux-schnell";
                 
@@ -45,21 +45,20 @@ export default async function handler(req, res) {
                         "x-api-key": segmindApiKey,
                         "Content-Type": "application/json"
                     },
+                    // PERBAIKAN: Menggunakan format parameter standar Segmind FLUX
                     body: JSON.stringify({
                         prompt: promptFinal,
                         steps: 4, 
-                        seed: Math.floor(Math.random() * 10000000), 
-                        sampler: "euler",
-                        aspect_ratio: "1:1",
-                        image_format: "jpeg"
+                        seed: Math.floor(Math.random() * 1000000000), 
+                        width: 1024,
+                        height: 1024
                     })
                 });
 
                 if (!segmindResponse.ok) {
-                    // Kalau error dari Segmind (misal kuota habis/API salah), tangkap errornya
                     const errorText = await segmindResponse.text();
                     console.error("Detail Error Segmind:", errorText);
-                    return res.status(500).json({ error: `Segmind gagal memproses (Status ${segmindResponse.status}). Cek kuota atau API Key kamu.` });
+                    return res.status(500).json({ error: `Segmind gagal memproses (Status ${segmindResponse.status}). Pastikan prompt aman dan tidak melanggar sistem, atau cek sisa kredit harianmu.` });
                 }
 
                 const arrayBuffer = await segmindResponse.arrayBuffer();
@@ -78,7 +77,7 @@ export default async function handler(req, res) {
 
         } else {
             // --- LOGIKA CHAT TEXT GEMINI 1.5 FLASH ---
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
             const parts = [];
             if (prompt) parts.push({ text: prompt });
