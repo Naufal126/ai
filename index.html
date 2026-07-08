@@ -435,7 +435,16 @@
                     gantiModeAuth('login');
                 }
             } catch (error) {
-                showCustomAlert(error.message);
+                let pesanError = error.message;
+                
+                // Ubah pesan error bawaan Firebase menjadi bahasa Indonesia
+                if (error.code === 'auth/invalid-credential') {
+                    pesanError = "Email atau password salah, atau akun belum terdaftar!";
+                } else if (error.code === 'auth/email-already-in-use') {
+                    pesanError = "Email ini sudah pernah didaftarkan!";
+                }
+                
+                showCustomAlert(pesanError);
             }
         }
 
