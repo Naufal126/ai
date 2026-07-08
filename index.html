@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="id" data-theme="light">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +6,10 @@
     <title>AI by Naufal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+
     <style>
         :root {
             --bg-color: #f1f5f9; 
@@ -42,8 +46,20 @@
         
         .glow-bg { position: absolute; width: 100vw; height: 100vh; background: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 60%); z-index: 0; pointer-events: none; }
         
+        /* AUTH STYLE */
+        #auth-section { display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; height: 100%; z-index: 1; padding: 20px; }
+        .auth-card { background: var(--container-bg); backdrop-filter: blur(20px); border: 1px solid var(--border-color); padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1); }
+        .auth-card h2 { font-weight: 800; margin-bottom: 20px; }
+        .auth-input { width: 100%; padding: 14px 20px; margin: 8px 0; border-radius: 50px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.95rem; }
+        .auth-input:focus { border-color: var(--user-bubble); }
+        .auth-btn { width: 100%; background: var(--user-bubble); color: white; border: none; padding: 14px; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .auth-btn:hover { opacity: 0.9; }
+        .google-btn { width: 100%; background: #fff; color: #000; border: 1px solid #cbd5e1; padding: 12px; border-radius: 50px; font-weight: 500; font-size: 0.95rem; cursor: pointer; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .auth-toggle-links { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
+        .auth-toggle-links span { color: var(--user-bubble); cursor: pointer; font-weight: 500; }
+
         /* LANDING PAGE */
-        #landing-page { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; animation: fadeIn 0.8s ease-out; width: 100%; height: 100%; z-index: 1; padding: 20px; position: relative; }
+        #landing-page { display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; animation: fadeIn 0.8s ease-out; width: 100%; height: 100%; z-index: 1; padding: 20px; position: relative; }
         .brand-title { font-size: clamp(3rem, 8vw, 4.5rem); font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; color: var(--text-main); }
         .brand-title span { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .subtitle { color: var(--text-muted); font-size: 1rem; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 40px; }
@@ -66,6 +82,8 @@
         .chat-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; margin-right: 10px; text-align: left; }
         .delete-chat-btn { background: transparent; border: none; cursor: pointer; opacity: 0.5; transition: 0.2s; font-size: 0.95rem; }
         .delete-chat-btn:hover { opacity: 1; }
+        .logout-btn { background: #ef4444; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        .logout-btn:hover { opacity: 0.9; }
 
         /* CHAT CONTAINER */
         .chat-container { width: 100%; max-width: 800px; height: 100dvh; background-color: var(--container-bg); backdrop-filter: blur(20px); display: none; flex-direction: column; z-index: 1; border: 1px solid var(--border-color); transition: all 0.3s; }
@@ -129,7 +147,25 @@
 <body>
     <div class="glow-bg"></div>
 
-    <!-- SIDEBAR PANEL -->
+    <div id="auth-section">
+        <div class="auth-card">
+            <h2 id="auth-title">Masuk ke AIBIBEL</h2>
+            <input type="email" id="auth-email" class="auth-input" placeholder="Alamat Email">
+            <input type="password" id="auth-password" class="auth-input" placeholder="Password">
+            <button id="auth-main-btn" class="auth-btn" onclick="prosesAuthUtama()">Masuk</button>
+            
+            <button id="google-login-btn" class="google-btn" onclick="loginGoogle()">
+                <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_24dp.png" width="18" alt="Google">
+                Masuk dengan Google
+            </button>
+
+            <div class="auth-toggle-links">
+                <p id="toggle-register-text">Belum punya akun? <span onclick="gantiModeAuth('register')">Daftar Sekarang</span></p>
+                <p id="toggle-forgot-text"><span onclick="gantiModeAuth('forgot')">Lupa Password?</span></p>
+            </div>
+        </div>
+    </div>
+
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h3 style="font-weight: 700;">Riwayat Obrolan</h3>
@@ -137,6 +173,7 @@
         </div>
         <button class="new-chat-btn" onclick="buatChatBaru()">+ Sesi Baru</button>
         <div class="chat-list" id="chat-list"></div>
+        <button class="logout-btn" onclick="logout()">Keluar Akun</button>
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
@@ -146,10 +183,9 @@
         <button class="start-btn" onclick="masukKeChat()">Mulai Percakapan</button>
     </div>
 
-    <div class="chat-container" id="chat-section">
+    <div class="chat-container" id="chat-section-panel">
         <div class="chat-header">
             <div class="header-actions">
-                <!-- Hamburger Menu Button -->
                 <button class="icon-btn" onclick="toggleSidebar()" title="Menu Riwayat">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -183,7 +219,6 @@
         <div class="input-area">
             <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
             
-            <!-- IKON PLUS PENGGANTI KAMERA -->
             <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Lampirkan Gambar">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -209,24 +244,133 @@
     </div>
 
     <script>
+        // --- CONFIG FIREBASE KAMU ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgoNf2Q8IJX7mTSd8UhHHeDVHnTlIZKdY",
+            authDomain: "aibibel.firebaseapp.com",
+            projectId: "aibibel",
+            storageBucket: "aibibel.firebasestorage.app",
+            messagingSenderId: "1094909336567",
+            appId: "1:1094909336567:web:bb00fc77479990770fecf2",
+            measurementId: "G-5QF54TC6LS"
+        };
+
+        // Inisialisasi Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
         const chatHistory = document.getElementById('chat-history');
         const promptInput = document.getElementById('prompt');
         let selectedImageData = null;
         let isTyping = false; 
 
-        // MULTI CHAT SYSTEM DATA STATE
+        // MULTI CHAT SYSTEM STATE & USER CONTEXT
         let allChats = [];
         let currentChatId = null;
+        let currentAuthMode = 'login'; // login, register, forgot
+        let currentUserUid = null;
 
-        // Inisialisasi Aplikasi
+        // Monitor Status Login Firebase
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUserUid = user.uid;
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('landing-page').style.display = 'flex';
+                muatSemuaChatDariStorage();
+            } else {
+                currentUserUid = null;
+                document.getElementById('auth-section').style.display = 'flex';
+                document.getElementById('landing-page').style.display = 'none';
+                document.getElementById('chat-section-panel').style.display = 'none';
+                gantiModeAuth('login');
+            }
+        });
+
         window.onload = () => {
-            muatSemuaChatDariStorage();
             if(localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
         };
 
-        // UI & Sidebar Navigation
-        function masukKeChat() { document.getElementById('landing-page').style.display = 'none'; document.getElementById('chat-section').style.display = 'flex'; }
-        function kembaliKeLanding() { document.getElementById('chat-section').style.display = 'none'; document.getElementById('landing-page').style.display = 'flex'; }
+        // --- MANAJEMEN MODE AUTH (UI) ---
+        function gantiModeAuth(mode) {
+            currentAuthMode = mode;
+            const title = document.getElementById('auth-title');
+            const passwordInput = document.getElementById('auth-password');
+            const mainBtn = document.getElementById('auth-main-btn');
+            const googleBtn = document.getElementById('google-login-btn');
+            const toggleRegister = document.getElementById('toggle-register-text');
+            const toggleForgot = document.getElementById('toggle-forgot-text');
+
+            if (mode === 'login') {
+                title.innerText = "Masuk ke AIBIBEL";
+                passwordInput.style.display = "block";
+                mainBtn.innerText = "Masuk";
+                googleBtn.style.display = "flex";
+                toggleRegister.innerHTML = `Belum punya akun? <span onclick="gantiModeAuth('register')">Daftar Sekarang</span>`;
+                toggleForgot.style.display = "block";
+            } else if (mode === 'register') {
+                title.innerText = "Daftar Akun Baru";
+                passwordInput.style.display = "block";
+                mainBtn.innerText = "Daftar";
+                googleBtn.style.display = "none";
+                toggleRegister.innerHTML = `Sudah punya akun? <span onclick="gantiModeAuth('login')">Masuk di sini</span>`;
+                toggleForgot.style.display = "none";
+            } else if (mode === 'forgot') {
+                title.innerText = "Pulihkan Password";
+                passwordInput.style.display = "none";
+                mainBtn.innerText = "Kirim Link Reset";
+                googleBtn.style.display = "none";
+                toggleRegister.innerHTML = `Kembali ke <span onclick="gantiModeAuth('login')">Halaman Login</span>`;
+                toggleForgot.style.display = "none";
+            }
+        }
+
+        // --- LOGIC PROSES FIREBASE AUTH ---
+        async function prosesAuthUtama() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            if (!email) return showCustomAlert("Email tidak boleh kosong!");
+
+            try {
+                if (currentAuthMode === 'login') {
+                    if (!password) return showCustomAlert("Password tidak boleh kosong!");
+                    await auth.signInWithEmailAndPassword(email, password);
+                    showCustomAlert("Berhasil masuk!");
+                } else if (currentAuthMode === 'register') {
+                    if (!password || password.length < 6) return showCustomAlert("Password minimal 6 karakter!");
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    showCustomAlert("Akun berhasil dibuat!");
+                } else if (currentAuthMode === 'forgot') {
+                    await auth.sendPasswordResetEmail(email);
+                    showCustomAlert("Link reset password telah dikirim ke email kamu!");
+                    gantiModeAuth('login');
+                }
+            } catch (error) {
+                showCustomAlert(error.message);
+            }
+        }
+
+        async function loginGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await auth.signInWithPopup(provider);
+                showCustomAlert("Berhasil masuk dengan Google!");
+            } catch (error) {
+                showCustomAlert(error.message);
+            }
+        }
+
+        function logout() {
+            if (confirm("Kamu yakin ingin keluar?")) {
+                auth.signOut().then(() => {
+                    if (document.getElementById('sidebar').classList.contains('open')) toggleSidebar();
+                });
+            }
+        }
+
+        // NAVIGATION
+        function masukKeChat() { document.getElementById('landing-page').style.display = 'none'; document.getElementById('chat-section-panel').style.display = 'flex'; }
+        function kembaliKeLanding() { document.getElementById('chat-section-panel').style.display = 'none'; document.getElementById('landing-page').style.display = 'flex'; }
         
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
@@ -245,7 +389,7 @@
             const messageElement = document.getElementById('custom-alert-message');
             messageElement.innerText = message;
             popup.classList.add('show');
-            setTimeout(() => { popup.classList.remove('show'); }, 2500); 
+            setTimeout(() => { popup.classList.remove('show'); }, 3000); 
         }
 
         function autoResize(el) {
@@ -260,7 +404,7 @@
             }
         }
 
-        // --- FITUR SPEECH, COPY & DOWNLOAD ---
+        // --- SPEECH, COPY & DOWNLOAD ---
         function bacaTeks(encodedText) {
             let teks = decodeURIComponent(encodedText).replace(/[*#`_]/g, ''); 
             const synth = window.speechSynthesis;
@@ -303,11 +447,15 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- CORE MULTI-CHAT STORAGE SYSTEM ---
+        // --- CORE MULTI-CHAT STORAGE SYSTEM (DENGAN SCOPE USER UID) ---
         function muatSemuaChatDariStorage() {
-            const storedChats = localStorage.getItem('aibibel_multi_chats');
+            if (!currentUserUid) return;
+
+            const storedChats = localStorage.getItem(`aibibel_multi_chats_${currentUserUid}`);
             if (storedChats) {
                 allChats = JSON.parse(storedChats);
+            } else {
+                allChats = [];
             }
             
             if (allChats.length === 0) {
@@ -319,7 +467,7 @@
                 });
                 currentChatId = newId;
             } else {
-                const lastId = localStorage.getItem('aibibel_current_chat_id');
+                const lastId = localStorage.getItem(`aibibel_current_chat_id_${currentUserUid}`);
                 if (lastId && allChats.some(c => c.id == lastId)) {
                     currentChatId = parseInt(lastId);
                 } else {
@@ -333,11 +481,12 @@
         }
 
         function simpanChatKeStorage() {
+            if (!currentUserUid) return;
+
             const activeChat = allChats.find(c => c.id === currentChatId);
             if (activeChat) {
                 activeChat.html = chatHistory.innerHTML;
                 
-                // Set judul otomatis berdasarkan pesan pertama user
                 if (activeChat.title === "Obrolan Baru" || activeChat.title === "Chat Baru") {
                     const firstUserMsg = chatHistory.querySelector('.message.user span');
                     if (firstUserMsg) {
@@ -351,8 +500,9 @@
         }
 
         function simpanSemuaStatekeStorage() {
-            localStorage.setItem('aibibel_multi_chats', JSON.stringify(allChats));
-            localStorage.setItem('aibibel_current_chat_id', currentChatId);
+            if (!currentUserUid) return;
+            localStorage.setItem(`aibibel_multi_chats_${currentUserUid}`, JSON.stringify(allChats));
+            localStorage.setItem(`aibibel_current_chat_id_${currentUserUid}`, currentChatId);
         }
 
         function renderDaftarSidebar() {
@@ -388,7 +538,7 @@
 
         function gantiSesiChat(id) {
             currentChatId = id;
-            localStorage.setItem('aibibel_current_chat_id', currentChatId);
+            if (currentUserUid) localStorage.setItem(`aibibel_current_chat_id_${currentUserUid}`, currentChatId);
             tampilkanIsiChatAktif();
             renderDaftarSidebar();
             if (window.innerWidth < 768) toggleSidebar();
@@ -575,4 +725,4 @@
         }
     </script>
 </body>
-</html>
+</html>                          📥 Simpan Gamba
