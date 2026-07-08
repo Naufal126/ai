@@ -54,7 +54,7 @@ export default async function handler(req, res) {
 
         } else {
             // --- LOGIKA CHAT TEXT GEMINI 1.5 FLASH ---
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
             const parts = [];
             if (prompt) parts.push({ text: prompt });
