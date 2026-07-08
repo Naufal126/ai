@@ -5,9 +5,8 @@ export default async function handler(req, res) {
 
     const { prompt, image } = req.body;
     
-    // Pastikan API Key di Vercel sudah disetting!
+    // Pastikan API Key Gemini di Vercel sudah disetting!
     const geminiApiKey = process.env.GEMINI_API_KEY;
-    const hfApiKey = process.env.HUGGINGFACE_API_KEY ? process.env.HUGGINGFACE_API_KEY.trim() : null;
 
     if (!geminiApiKey) {
         return res.status(500).json({ error: 'API Key Gemini belum disetting di Vercel!' });
@@ -29,50 +28,27 @@ export default async function handler(req, res) {
         };
 
         if (mintaGambar) {
-            if (!hfApiKey) {
-                return res.status(500).json({ error: 'API Key Hugging Face belum disetting di Vercel!' });
-            }
-
             const promptBersih = dapatkanPromptBersih(prompt);
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
+            // Encode prompt agar aman dimasukkan ke dalam URL
+            const encodedPrompt = encodeURIComponent(promptFinal);
+
             // ==========================================
-            // FETCH KE HUGGING FACE API (FLUX.1-SCHNELL)
+            // POLLINATIONS AI - FLUX MODEL (GRATIS & TANPA API KEY)
             // ==========================================
-            const hfResponse = await fetch('https://api.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${hfApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    inputs: promptFinal,
-                    options: { wait_for_model: true } // Memaksa server menunggu sampai model siap
-                })
-            });
+            // Kita pakai model=flux agar kualitas gambarnya super HD mirip Leonardo
+            const imageUrl = `https://image.pollinations.ai/p/${encodedPrompt}?model=flux&width=1024&height=1024&enhance=true`;
 
-            if (!hfResponse.ok) {
-                const errorData = await hfResponse.json().catch(() => ({}));
-                if (errorData.error && errorData.error.includes("is currently loading")) {
-                    return res.status(503).json({ error: "AI Pembuat Gambar sedang pemanasan. Coba lagi dalam 20 detik ya, Fal!" });
-                }
-                throw new Error(errorData.error || "Gagal generate gambar dari Hugging Face.");
-            }
-
-            // Ubah respons gambar mentah (Blob/Buffer) ke format Base64 supaya bisa dibaca tag <img> di HTML
-            const arrayBuffer = await hfResponse.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-            const base64Image = buffer.toString('base64');
-            const imageUrl = `data:image/jpeg;base64,${base64Image}`;
-
+            // Pollinations tidak butuh fetch data gambar di backend, langsung balikin URL-nya aja!
             return res.status(200).json({ 
-                reply: `Ini dia gambarnya! Aku pakai model **FLUX.1** kualitas HD tanpa mikirin saldo kredit habis, Fal:`, 
+                reply: `Ini dia gambarnya! Aku pakai model **Flux (via Pollinations)** yang super HD, gratis, dan anti-error saldo habis, Fal:`, 
                 imageUrl: imageUrl 
             });
 
         } else {
             // ==========================================
-            // LOGIKA CHAT TEXT GEMINI 3.1 FLASH LITE
+            // LOGIKA CHAT TEXT GEMINI 1.5 FLASH
             // ==========================================
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
 
