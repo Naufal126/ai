@@ -121,7 +121,13 @@
     <div class="chat-container" id="chat-section">
         <div class="chat-header">
             <div class="header-actions">
-                <button class="icon-btn" onclick="kembaliKeLanding()">🔙</button>
+                <!-- TOMBOL BACK DIPERBARUI -->
+                <button class="icon-btn" onclick="kembaliKeLanding()" title="Kembali">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
                 <button class="icon-btn" onclick="hapusSemuaChat()" title="Hapus Riwayat">🗑️</button>
             </div>
             <h2>AI by Naufal</h2>
@@ -219,27 +225,33 @@
             recognition.start();
         }
 
-        // Fitur Text to Speech (TTS)
-        function bacaTeks(teks) {
-    const synth = window.speechSynthesis;
-    
-    // 1. Bersihkan antrean lama agar tidak macet
-    synth.cancel();
+        // --- FITUR TEXT TO SPEECH (DIPERBAIKI) ---
+        function bacaTeks(encodedText) {
+            // 1. Decode teks dan bersihkan simbol markdown (*, #, `)
+            let teks = decodeURIComponent(encodedText);
+            teks = teks.replace(/[*#`_]/g, ''); 
 
-    const utterThis = new SpeechSynthesisUtterance(teks);
-    utterThis.lang = 'id-ID'; // Mengatur bahasa ke Indonesia
+            const synth = window.speechSynthesis;
+            synth.cancel(); // Bersihkan antrean sebelumnya biar gak nyangkut
 
-    // 2. Fungsi untuk mendapatkan suara (beberapa browser butuh waktu untuk memuat list)
-    const voices = synth.getVoices();
-    if (voices.length > 0) {
-        // Pilih suara Google Indonesia jika tersedia
-        const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Google'));
-        if (voiceID) utterThis.voice = voiceID;
-    }
+            const utterThis = new SpeechSynthesisUtterance(teks);
+            utterThis.lang = 'id-ID';
 
-    // 3. Eksekusi bicara
-    synth.speak(utterThis);
-}
+            // 2. Fungsi untuk mengatur suara dan mulai bicara
+            function setVoiceAndSpeak() {
+                const voices = synth.getVoices();
+                const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Indonesia') || v.name.includes('Google'));
+                if (voiceID) utterThis.voice = voiceID;
+                synth.speak(utterThis);
+            }
+
+            // 3. Pancing browser untuk memuat daftar suara
+            if (synth.getVoices().length === 0) {
+                synth.onvoiceschanged = setVoiceAndSpeak;
+            } else {
+                setVoiceAndSpeak();
+            }
+        }
 
         // --- FITUR COPY TEXT (CUSTOM ALERT) ---
         function salinTeks(encodedText) {
@@ -327,15 +339,14 @@
             let htmlContent = '';
             
             // Render text with Markdown if it's AI
-            const teksAman = teks ? teks.replace(/"/g, '&quot;') : ''; // Escape quotes for TTS
             if (teks && pengirim === 'ai') {
-                const encodedText = encodeURIComponent(teks); // Encode text untuk fitur Salin
+                const encodedText = encodeURIComponent(teks); // Encode text untuk fitur Salin & Baca
                 htmlContent += marked.parse(teks);
-                // Tambahkan tombol aksi untuk AI
+                // Tambahkan tombol aksi untuk AI (KODE TTS DIPERBARUI DI SINI)
                 htmlContent += `
                     <div class="ai-actions">
                         <button onclick="salinTeks('${encodedText}')" title="Salin">📋</button>
-                        <button onclick="bacaTeks('${teksAman}')" title="Baca">🔊</button>
+                        <button onclick="bacaTeks('${encodedText}')" title="Baca">🔊</button>
                     </div>`;
             } else if (teks) {
                 htmlContent += `<span>${teks.replace(/\n/g, '<br>')}</span>`;
