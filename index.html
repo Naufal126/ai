@@ -203,12 +203,12 @@
             synth.speak(utterThis);
         }
 
-        // --- FITUR COPY TEXT (DIPERBAIKI) ---
+        // --- FITUR COPY TEXT (ALERT DIHAPUS) ---
         function salinTeks(encodedText) {
             const teks = decodeURIComponent(encodedText);
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(teks).then(() => {
-                    alert("Teks berhasil disalin!");
+                    // Berhasil disalin (diam-diam)
                 }).catch(() => fallbackCopyText(teks));
             } else {
                 fallbackCopyText(teks);
@@ -222,14 +222,14 @@
             textArea.select();
             try {
                 document.execCommand('copy');
-                alert("Teks berhasil disalin!");
+                // Berhasil disalin (diam-diam)
             } catch (err) {
-                alert("Gagal menyalin teks.");
+                // Gagal menyalin teks (diam-diam)
             }
             document.body.removeChild(textArea);
         }
 
-        // --- FITUR DOWNLOAD GAMBAR ---
+        // --- FITUR DOWNLOAD GAMBAR (ALERT DIHAPUS) ---
         async function downloadGambar(url) {
             try {
                 const response = await fetch(url);
@@ -241,7 +241,8 @@
                 link.click();
                 document.body.removeChild(link);
             } catch (err) {
-                alert("Gagal mendownload gambar. Coba tekan dan tahan gambarnya lalu pilih 'Simpan'.");
+                // Gagal mendownload gambar (diam-diam)
+                console.error("Gagal mendownload gambar", err);
             }
         }
 
