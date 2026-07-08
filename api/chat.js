@@ -37,9 +37,9 @@ export default async function handler(req, res) {
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
             // ==========================================
-            // FETCH KE HUGGING FACE API (SDXL MODEL)
+            // FETCH KE HUGGING FACE API (FLUX.1-SCHNELL)
             // ==========================================
-            const hfResponse = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+            const hfResponse = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${hfApiKey}`,
@@ -47,16 +47,16 @@ export default async function handler(req, res) {
                 },
                 body: JSON.stringify({
                     inputs: promptFinal,
+                    options: { wait_for_model: true } // Memaksa server menunggu sampai model siap
                 })
             });
 
             if (!hfResponse.ok) {
-                // Kadang model HF butuh waktu untuk "loading" kalau lagi jarang dipakai
-                const errorData = await hfResponse.json();
+                const errorData = await hfResponse.json().catch(() => ({}));
                 if (errorData.error && errorData.error.includes("is currently loading")) {
                     return res.status(503).json({ error: "AI Pembuat Gambar sedang pemanasan. Coba lagi dalam 20 detik ya, Fal!" });
                 }
-                throw new Error("Gagal generate gambar dari Hugging Face.");
+                throw new Error(errorData.error || "Gagal generate gambar dari Hugging Face.");
             }
 
             // Ubah respons gambar mentah (Blob/Buffer) ke format Base64 supaya bisa dibaca tag <img> di HTML
@@ -66,13 +66,13 @@ export default async function handler(req, res) {
             const imageUrl = `data:image/jpeg;base64,${base64Image}`;
 
             return res.status(200).json({ 
-                reply: `Ini dia gambarnya! Aku pakai **Stable Diffusion XL** yang gratis dan tanpa mikirin saldo kredit habis, Fal:`, 
+                reply: `Ini dia gambarnya! Aku pakai model **FLUX.1** kualitas HD tanpa mikirin saldo kredit habis, Fal:`, 
                 imageUrl: imageUrl 
             });
 
         } else {
             // ==========================================
-            // LOGIKA CHAT TEXT GEMINI 1.5 FLASH
+            // LOGIKA CHAT TEXT GEMINI 3.1 FLASH LITE
             // ==========================================
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
 
@@ -98,10 +98,8 @@ export default async function handler(req, res) {
             return res.status(200).json({ reply: replyText });
         }
         
-    }    } catch (error) {
-        // Tambahan logika untuk membongkar akar masalah (cause) dari fetch failed
+    } catch (error) {
         const detailPenyebab = error.cause ? error.cause.message : "Tidak ada detail tambahan dari server";
         return res.status(500).json({ error: `Error: ${error.message} | Penyebab Asli: ${detailPenyebab}` });
     }
 }
- 
