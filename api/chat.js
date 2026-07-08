@@ -29,56 +29,32 @@ export default async function handler(req, res) {
             const promptBersih = dapatkanPromptBersih(prompt);
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
-            // --- JALUR MURNI GOOGLE IMAGEN ---
-            try {
-                // Menggunakan endpoint resmi Imagen dari Google Generative Language API
-                const imagenEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-Ultra-Generate:predict?key=${apiKey}`;
-                
-                const imagenResponse = await fetch(imagenEndpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        instances: [
-                            { prompt: promptFinal }
-                        ],
-                        parameters: {
-                            sampleCount: 1,
-                            outputOptions: {
-                                mimeType: "image/jpeg"
-                            }
-                        }
-                    })
-                });
-
-                if (!imagenResponse.ok) {
-                    const errorData = await imagenResponse.text();
-                    console.error("Detail Error Imagen:", errorData);
-                    return res.status(500).json({ error: `Google Imagen menolak permintaanmu. Coba gunakan kata-kata yang lebih aman.` });
-                }
-
-                const data = await imagenResponse.json();
-                
-                // Mengambil hasil Base64 dari JSON response Google Imagen
-                if (data.predictions && data.predictions.length > 0) {
-                    const base64Image = data.predictions[0].bytesBase64Encoded;
-                    const dataUrlVal = `data:image/jpeg;base64,${base64Image}`;
-
-                    return res.status(200).json({ 
-                        reply: "Ini hasil jepretan dari Google Imagen khusus buat kamu, Fal:", 
-                        imageUrl: dataUrlVal 
-                    });
-                } else {
-                    return res.status(500).json({ error: "Google Imagen tidak mengembalikan gambar apapun." });
-                }
-
-            } catch (imagenError) {
-                console.error("Gagal fetch ke Google Imagen:", imagenError);
-                return res.status(500).json({ error: `Koneksi ke server Google Imagen terputus: ${imagenError.message}` });
+            // --- SISTEM DETEKSI MODEL OTOMATIS ---
+            let modelPilihan = "flux"; // Model default
+            
+            if (teks.includes("anime") || teks.includes("kartun jepang") || teks.includes("manga")) {
+                modelPilihan = "anime";
+            } else if (teks.includes("nyata") || teks.includes("realistis") || teks.includes("fotorealistik") || teks.includes("asli")) {
+                modelPilihan = "realism";
+            } else if (teks.includes("3d") || teks.includes("pixar") || teks.includes("disney")) {
+                modelPilihan = "3d";
+            } else if (teks.includes("gelap") || teks.includes("dark") || teks.includes("seram")) {
+                modelPilihan = "any-dark";
+            } else if (teks.includes("lukisan") || teks.includes("artistik")) {
+                modelPilihan = "turbo";
             }
+
+            // Menyisipkan model yang terpilih ke dalam URL Pollinations
+            const urlGambar = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptFinal)}?width=1024&height=1024&nologo=true&model=${modelPilihan}`;
+            
+            return res.status(200).json({ 
+                reply: `Ini dia gambarnya! Aku pakai model **${modelPilihan}** biar hasilnya nggak kaku dan sesuai gaya yang kamu minta, Fal:`, 
+                imageUrl: urlGambar 
+            });
 
         } else {
             // --- LOGIKA CHAT TEXT GEMINI 1.5 FLASH ---
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
             const parts = [];
             if (prompt) parts.push({ text: prompt });
