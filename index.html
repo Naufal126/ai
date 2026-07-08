@@ -50,12 +50,29 @@
         .start-btn { background: var(--header-bg); border: 1px solid var(--border-color); backdrop-filter: blur(10px); color: var(--text-main); padding: 14px 32px; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
         .start-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.15); }
 
+        /* SIDEBAR MULTI-CHAT */
+        .sidebar { position: fixed; left: 0; top: 0; height: 100dvh; width: 280px; background-color: var(--input-bg); backdrop-filter: blur(20px); border-right: 1px solid var(--border-color); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 20px; }
+        .sidebar.open { transform: translateX(0); }
+        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: rgba(0,0,0,0.3); z-index: 99; display: none; }
+        .sidebar-overlay.show { display: block; }
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .close-sidebar-btn { background: transparent; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; }
+        .new-chat-btn { background: var(--user-bubble); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 15px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .new-chat-btn:hover { opacity: 0.9; }
+        .chat-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .chat-item { padding: 12px; border-radius: 10px; background: rgba(128,128,128,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border: 1px solid transparent; transition: 0.2s; color: var(--text-main); }
+        .chat-item:hover, .chat-item.active { background: rgba(128,128,128,0.1); border-color: var(--border-color); }
+        .chat-item.active { border-color: var(--user-bubble); font-weight: 500; }
+        .chat-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; margin-right: 10px; text-align: left; }
+        .delete-chat-btn { background: transparent; border: none; cursor: pointer; opacity: 0.5; transition: 0.2s; font-size: 0.95rem; }
+        .delete-chat-btn:hover { opacity: 1; }
+
         /* CHAT CONTAINER */
         .chat-container { width: 100%; max-width: 800px; height: 100dvh; background-color: var(--container-bg); backdrop-filter: blur(20px); display: none; flex-direction: column; z-index: 1; border: 1px solid var(--border-color); transition: all 0.3s; }
         @media (min-width: 768px) { .chat-container { height: 90vh; border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); } }
 
         .chat-header { position: relative; padding: 16px 20px; text-align: center; border-bottom: 1px solid var(--border-color); background: var(--header-bg); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: space-between; }
-        .header-actions { display: flex; gap: 8px; }
+        .header-actions { display: flex; gap: 4px; align-items: center; }
         .icon-btn { background: transparent; border: none; color: var(--text-main); cursor: pointer; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .icon-btn:hover { background-color: rgba(128,128,128,0.1); }
         .chat-header h2 { font-size: 1.1rem; font-weight: 700; flex-grow: 1; text-align: center; }
@@ -112,6 +129,17 @@
 <body>
     <div class="glow-bg"></div>
 
+    <!-- SIDEBAR PANEL -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 style="font-weight: 700;">Riwayat Obrolan</h3>
+            <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
+        </div>
+        <button class="new-chat-btn" onclick="buatChatBaru()">+ Sesi Baru</button>
+        <div class="chat-list" id="chat-list"></div>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
     <div id="landing-page">
         <h1 class="brand-title">AIBIBEL BY<br><span>NAUFAL</span></h1>
         <p class="subtitle">Personal Assistant</p>
@@ -121,13 +149,21 @@
     <div class="chat-container" id="chat-section">
         <div class="chat-header">
             <div class="header-actions">
+                <!-- Hamburger Menu Button -->
+                <button class="icon-btn" onclick="toggleSidebar()" title="Menu Riwayat">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
                 <button class="icon-btn" onclick="kembaliKeLanding()" title="Kembali">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                 </button>
-                <button class="icon-btn" onclick="hapusSemuaChat()" title="Hapus Riwayat">🗑️</button>
+                <button class="icon-btn" onclick="hapusSemuaChat()" title="Kosongkan Obrolan Ini">🗑️</button>
             </div>
             <h2>AI by Naufal</h2>
             <div class="header-actions">
@@ -146,7 +182,14 @@
 
         <div class="input-area">
             <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
-            <button class="icon-btn" onclick="document.getElementById('file-input').click()">📷</button>
+            
+            <!-- IKON PLUS PENGGANTI KAMERA -->
+            <button class="icon-btn" onclick="document.getElementById('file-input').click()" title="Lampirkan Gambar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </button>
             
             <textarea id="prompt" placeholder="Ketik pesan..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
             
@@ -169,18 +212,27 @@
         const chatHistory = document.getElementById('chat-history');
         const promptInput = document.getElementById('prompt');
         let selectedImageData = null;
-        let isTyping = false; // Mencegah kirim pesan baru saat AI sedang mengetik
+        let isTyping = false; 
+
+        // MULTI CHAT SYSTEM DATA STATE
+        let allChats = [];
+        let currentChatId = null;
 
         // Inisialisasi Aplikasi
         window.onload = () => {
-            muatChatDariStorage();
+            muatSemuaChatDariStorage();
             if(localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
         };
 
-        // UI & Navigation
+        // UI & Sidebar Navigation
         function masukKeChat() { document.getElementById('landing-page').style.display = 'none'; document.getElementById('chat-section').style.display = 'flex'; }
         function kembaliKeLanding() { document.getElementById('chat-section').style.display = 'none'; document.getElementById('landing-page').style.display = 'flex'; }
         
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('sidebar-overlay').classList.toggle('show');
+        }
+
         function toggleTheme() {
             const html = document.documentElement;
             const isDark = html.getAttribute('data-theme') === 'dark';
@@ -188,22 +240,19 @@
             localStorage.setItem('theme', isDark ? 'light' : 'dark');
         }
 
-        // CUSTOM POPUP ALERT FUNCTION
         function showCustomAlert(message) {
             const popup = document.getElementById('custom-alert');
             const messageElement = document.getElementById('custom-alert-message');
             messageElement.innerText = message;
             popup.classList.add('show');
-            setTimeout(() => {
-                popup.classList.remove('show');
-            }, 2500); 
+            setTimeout(() => { popup.classList.remove('show'); }, 2500); 
         }
 
-        // Textarea Auto-resize
         function autoResize(el) {
             el.style.height = 'auto';
             el.style.height = (el.scrollHeight < 120 ? el.scrollHeight : 120) + 'px';
         }
+        
         function handleEnter(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -211,17 +260,16 @@
             }
         }
 
-        // --- FITUR TEXT TO SPEECH ---
+        // --- FITUR SPEECH, COPY & DOWNLOAD ---
         function bacaTeks(encodedText) {
-            let teks = decodeURIComponent(encodedText);
-            teks = teks.replace(/[*#`_]/g, ''); 
+            let teks = decodeURIComponent(encodedText).replace(/[*#`_]/g, ''); 
             const synth = window.speechSynthesis;
             synth.cancel(); 
             const utterThis = new SpeechSynthesisUtterance(teks);
             utterThis.lang = 'id-ID';
             function setVoiceAndSpeak() {
                 const voices = synth.getVoices();
-                const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Indonesia') || v.name.includes('Google'));
+                const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Indonesia'));
                 if (voiceID) utterThis.voice = voiceID;
                 synth.speak(utterThis);
             }
@@ -229,23 +277,20 @@
             else setVoiceAndSpeak();
         }
 
-        // --- FITUR COPY TEXT ---
         function salinTeks(encodedText) {
             const teks = decodeURIComponent(encodedText);
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(teks).then(() => showCustomAlert("Teks berhasil disalin!")).catch(() => fallbackCopyText(teks));
             } else fallbackCopyText(teks);
         }
+        
         function fallbackCopyText(text) {
             const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
+            textArea.value = text; document.body.appendChild(textArea); textArea.select();
             try { document.execCommand('copy'); showCustomAlert("Teks berhasil disalin!"); } catch (err) {}
             document.body.removeChild(textArea);
         }
 
-        // --- FITUR DOWNLOAD GAMBAR ---
         async function downloadGambar(url) {
             try {
                 const response = await fetch(url);
@@ -253,25 +298,138 @@
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
                 link.download = 'AIBibel-Image-' + new Date().getTime() + '.jpg';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
                 showCustomAlert("Berhasil simpan gambar!");
-            } catch (err) { console.error("Gagal mendownload gambar", err); }
+            } catch (err) { console.error(err); }
         }
 
-        // Local Storage System
-        function simpanChatKeStorage() { localStorage.setItem('riwayatChatAI', chatHistory.innerHTML); }
-        function muatChatDariStorage() {
-            const history = localStorage.getItem('riwayatChatAI');
-            if (history) chatHistory.innerHTML = history;
-            else tambahPesan("Halo! Ada yang bisa aku bantu?", 'ai', null, true);
+        // --- CORE MULTI-CHAT STORAGE SYSTEM ---
+        function muatSemuaChatDariStorage() {
+            const storedChats = localStorage.getItem('aibibel_multi_chats');
+            if (storedChats) {
+                allChats = JSON.parse(storedChats);
+            }
+            
+            if (allChats.length === 0) {
+                const newId = Date.now();
+                allChats.push({
+                    id: newId,
+                    title: "Obrolan Baru",
+                    html: `<div class="message ai"><p>Halo! Ada yang bisa aku bantu?</p></div>`
+                });
+                currentChatId = newId;
+            } else {
+                const lastId = localStorage.getItem('aibibel_current_chat_id');
+                if (lastId && allChats.some(c => c.id == lastId)) {
+                    currentChatId = parseInt(lastId);
+                } else {
+                    currentChatId = allChats[0].id;
+                }
+            }
+            
+            simpanSemuaStatekeStorage();
+            renderDaftarSidebar();
+            tampilkanIsiChatAktif();
         }
+
+        function simpanChatKeStorage() {
+            const activeChat = allChats.find(c => c.id === currentChatId);
+            if (activeChat) {
+                activeChat.html = chatHistory.innerHTML;
+                
+                // Set judul otomatis berdasarkan pesan pertama user
+                if (activeChat.title === "Obrolan Baru" || activeChat.title === "Chat Baru") {
+                    const firstUserMsg = chatHistory.querySelector('.message.user span');
+                    if (firstUserMsg) {
+                        let text = firstUserMsg.innerText || firstUserMsg.textContent;
+                        activeChat.title = text.length > 20 ? text.substring(0, 20) + "..." : text;
+                        renderDaftarSidebar();
+                    }
+                }
+            }
+            simpanSemuaStatekeStorage();
+        }
+
+        function simpanSemuaStatekeStorage() {
+            localStorage.setItem('aibibel_multi_chats', JSON.stringify(allChats));
+            localStorage.setItem('aibibel_current_chat_id', currentChatId);
+        }
+
+        function renderDaftarSidebar() {
+            const listContainer = document.getElementById('chat-list');
+            listContainer.innerHTML = '';
+            
+            allChats.forEach(chat => {
+                const item = document.createElement('div');
+                item.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+                item.setAttribute('onclick', `gantiSesiChat(${chat.id})`);
+                
+                const titleSpan = document.createElement('span');
+                titleSpan.innerText = chat.title;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-chat-btn';
+                deleteBtn.innerHTML = '🗑️';
+                deleteBtn.setAttribute('onclick', `hapusSesiChat(event, ${chat.id})`);
+                
+                item.appendChild(titleSpan);
+                item.appendChild(deleteBtn);
+                listContainer.appendChild(item);
+            });
+        }
+
+        function tampilkanIsiChatAktif() {
+            const activeChat = allChats.find(c => c.id === currentChatId);
+            if (activeChat) {
+                chatHistory.innerHTML = activeChat.html;
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        }
+
+        function gantiSesiChat(id) {
+            currentChatId = id;
+            localStorage.setItem('aibibel_current_chat_id', currentChatId);
+            tampilkanIsiChatAktif();
+            renderDaftarSidebar();
+            if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function buatChatBaru() {
+            const newId = Date.now();
+            allChats.unshift({
+                id: newId,
+                title: "Chat Baru",
+                html: `<div class="message ai"><p>Halo! Ada yang bisa aku bantu?</p></div>`
+            });
+            currentChatId = newId;
+            simpanSemuaStatekeStorage();
+            renderDaftarSidebar();
+            tampilkanIsiChatAktif();
+            if (window.innerWidth < 768) toggleSidebar();
+        }
+
+        function hapusSesiChat(e, id) {
+            e.stopPropagation(); 
+            if (allChats.length === 1) {
+                showCustomAlert("Minimal harus menyisakan 1 obrolan!");
+                return;
+            }
+            if (confirm("Hapus sesi obrolan ini?")) {
+                allChats = allChats.filter(c => c.id !== id);
+                if (currentChatId === id) {
+                    currentChatId = allChats[0].id;
+                }
+                simpanSemuaStatekeStorage();
+                renderDaftarSidebar();
+                tampilkanIsiChatAktif();
+            }
+        }
+
         function hapusSemuaChat() {
-            if(confirm("Hapus semua riwayat percakapan?")) {
+            if(confirm("Kosongkan semua pesan di obrolan aktif ini?")) {
                 chatHistory.innerHTML = '';
-                localStorage.removeItem('riwayatChatAI');
                 tambahPesan("Halo! Ada yang bisa aku bantu?", 'ai', null, true);
+                simpanChatKeStorage();
             }
         }
 
@@ -292,11 +450,10 @@
         function bukaModal(src) { document.getElementById('img-modal-view').src = src; document.getElementById('image-modal').classList.add('show'); }
         function tutupModal(e) { if(e.target.id === 'image-modal' || e.target.classList.contains('close-modal')) document.getElementById('image-modal').classList.remove('show'); }
 
-        // --- LOGIC PESAN UMUM ---
+        // --- MESSAGES SYSTEM ---
         function tambahPesan(teks, pengirim, imgUrl = null, isInit = false) {
             const div = document.createElement('div');
             div.className = `message ${pengirim}`;
-            
             let htmlContent = '';
             
             if (teks && pengirim === 'ai') {
@@ -331,35 +488,26 @@
             return div;
         }
 
-        // --- FITUR BARU: FAKE STREAMING (TYPEWRITER EFFECT) ---
         function ketikPesanAI(teks, imgUrl = null) {
             isTyping = true;
-            
-            // 1. Buat bubble chat kosong
             const div = document.createElement('div');
             div.className = `message ai`;
             chatHistory.appendChild(div);
             
             let i = 0;
-            const kecepatan = 3; // Kecepatan ngetik (makin besar makin cepat)
+            const kecepatan = 3; 
             
-            // 2. Mulai animasi ngetik
             const ngetikInterval = setInterval(() => {
                 i += kecepatan;
-                
                 if (i >= teks.length) {
-                    // Jika sudah selesai ngetik
                     i = teks.length;
                     clearInterval(ngetikInterval);
-                    
-                    // Render versi lengkap (dengan tombol copy, baca, dan gambar)
                     renderPesanSelesai(div, teks, imgUrl);
                 } else {
-                    // Tampilkan teks yang belum lengkap (diproses pakai markdown)
                     div.innerHTML = marked.parse(teks.substring(0, i));
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                 }
-            }, 15); // Interval 15ms per render
+            }, 15); 
         }
 
         function renderPesanSelesai(div, teks, imgUrl) {
@@ -385,8 +533,7 @@
             div.innerHTML = htmlContent;
             chatHistory.scrollTop = chatHistory.scrollHeight;
             simpanChatKeStorage();
-            
-            isTyping = false; // Buka kunci agar user bisa balas lagi
+            isTyping = false; 
         }
 
         function tampilkanLoading() {
@@ -396,7 +543,7 @@
         }
 
         async function kirimPesan() {
-            if (isTyping) return showCustomAlert("Tunggu AI selesai mengetik ya!"); // Cegah spam jika AI sedang ngetik
+            if (isTyping) return showCustomAlert("Tunggu AI selesai mengetik ya!"); 
 
             const teks = promptInput.value.trim();
             if (!teks && !selectedImageData) return;
@@ -419,7 +566,6 @@
                 if (data.error) {
                     tambahPesan("Error: " + data.error, 'ai');
                 } else {
-                    // PANGGIL FITUR MENGETIK DI SINI!
                     ketikPesanAI(data.reply, data.imageUrl);
                 }
             } catch (error) {
