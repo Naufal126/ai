@@ -4,9 +4,12 @@ export default async function handler(req, res) {
     }
 
     const { prompt, image } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
+    
+    // Pastikan API Key di Vercel sudah disetting!
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+    const hfApiKey = process.env.HUGGINGFACE_API_KEY; // TAMBAHKAN INI DI VERCEL
 
-    if (!apiKey) {
+    if (!geminiApiKey) {
         return res.status(500).json({ error: 'API Key Gemini belum disetting di Vercel!' });
     }
 
@@ -26,35 +29,52 @@ export default async function handler(req, res) {
         };
 
         if (mintaGambar) {
+            if (!hfApiKey) {
+                return res.status(500).json({ error: 'API Key Hugging Face belum disetting di Vercel!' });
+            }
+
             const promptBersih = dapatkanPromptBersih(prompt);
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
-            // --- SISTEM DETEKSI MODEL OTOMATIS ---
-            let modelPilihan = "flux"; // Model default
-            
-            if (teks.includes("anime") || teks.includes("kartun jepang") || teks.includes("manga")) {
-                modelPilihan = "anime";
-            } else if (teks.includes("nyata") || teks.includes("realistis") || teks.includes("fotorealistik") || teks.includes("asli")) {
-                modelPilihan = "realism";
-            } else if (teks.includes("3d") || teks.includes("pixar") || teks.includes("disney")) {
-                modelPilihan = "3d";
-            } else if (teks.includes("gelap") || teks.includes("dark") || teks.includes("seram")) {
-                modelPilihan = "any-dark";
-            } else if (teks.includes("lukisan") || teks.includes("artistik")) {
-                modelPilihan = "turbo";
+            // ==========================================
+            // FETCH KE HUGGING FACE API (SDXL MODEL)
+            // ==========================================
+            const hfResponse = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${hfApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: promptFinal,
+                })
+            });
+
+            if (!hfResponse.ok) {
+                // Kadang model HF butuh waktu untuk "loading" kalau lagi jarang dipakai
+                const errorData = await hfResponse.json();
+                if (errorData.error && errorData.error.includes("is currently loading")) {
+                    return res.status(503).json({ error: "AI Pembuat Gambar sedang pemanasan. Coba lagi dalam 20 detik ya, Fal!" });
+                }
+                throw new Error("Gagal generate gambar dari Hugging Face.");
             }
 
-            // Menyisipkan model yang terpilih ke dalam URL Pollinations
-            const urlGambar = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptFinal)}?width=1024&height=1024&nologo=true&model=${modelPilihan}`;
-            
+            // Ubah respons gambar mentah (Blob/Buffer) ke format Base64 supaya bisa dibaca tag <img> di HTML
+            const arrayBuffer = await hfResponse.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const base64Image = buffer.toString('base64');
+            const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+
             return res.status(200).json({ 
-                reply: `Ini dia gambarnya! Aku pakai model **${modelPilihan}** biar hasilnya nggak kaku dan sesuai gaya yang kamu minta, Fal:`, 
-                imageUrl: urlGambar 
+                reply: `Ini dia gambarnya! Aku pakai **Stable Diffusion XL** yang gratis dan tanpa mikirin saldo kredit habis, Fal:`, 
+                imageUrl: imageUrl 
             });
 
         } else {
-            // --- LOGIKA CHAT TEXT GEMINI 1.5 FLASH ---
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+            // ==========================================
+            // LOGIKA CHAT TEXT GEMINI 1.5 FLASH
+            // ==========================================
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
 
             const parts = [];
             if (prompt) parts.push({ text: prompt });
