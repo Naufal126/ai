@@ -221,11 +221,25 @@
 
         // Fitur Text to Speech (TTS)
         function bacaTeks(teks) {
-            const synth = window.speechSynthesis;
-            const utterThis = new SpeechSynthesisUtterance(teks);
-            utterThis.lang = 'id-ID';
-            synth.speak(utterThis);
-        }
+    const synth = window.speechSynthesis;
+    
+    // 1. Bersihkan antrean lama agar tidak macet
+    synth.cancel();
+
+    const utterThis = new SpeechSynthesisUtterance(teks);
+    utterThis.lang = 'id-ID'; // Mengatur bahasa ke Indonesia
+
+    // 2. Fungsi untuk mendapatkan suara (beberapa browser butuh waktu untuk memuat list)
+    const voices = synth.getVoices();
+    if (voices.length > 0) {
+        // Pilih suara Google Indonesia jika tersedia
+        const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Google'));
+        if (voiceID) utterThis.voice = voiceID;
+    }
+
+    // 3. Eksekusi bicara
+    synth.speak(utterThis);
+}
 
         // --- FITUR COPY TEXT (CUSTOM ALERT) ---
         function salinTeks(encodedText) {
