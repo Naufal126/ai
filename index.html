@@ -121,7 +121,6 @@
     <div class="chat-container" id="chat-section">
         <div class="chat-header">
             <div class="header-actions">
-                <!-- TOMBOL BACK SVG -->
                 <button class="icon-btn" onclick="kembaliKeLanding()" title="Kembali">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -148,11 +147,10 @@
         <div class="input-area">
             <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
             <button class="icon-btn" onclick="document.getElementById('file-input').click()">📷</button>
-            <!-- Tombol Mic sudah dihapus dari sini -->
             
             <textarea id="prompt" placeholder="Ketik pesan..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
             
-            <button class="send-btn" onclick="kirimPesan()">
+            <button class="send-btn" id="btn-kirim" onclick="kirimPesan()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
         </div>
@@ -171,6 +169,7 @@
         const chatHistory = document.getElementById('chat-history');
         const promptInput = document.getElementById('prompt');
         let selectedImageData = null;
+        let isTyping = false; // Mencegah kirim pesan baru saat AI sedang mengetik
 
         // Inisialisasi Aplikasi
         window.onload = () => {
@@ -197,7 +196,7 @@
             popup.classList.add('show');
             setTimeout(() => {
                 popup.classList.remove('show');
-            }, 2500); // Popup will disappear after 2.5 seconds
+            }, 2500); 
         }
 
         // Textarea Auto-resize
@@ -212,58 +211,41 @@
             }
         }
 
-        // --- FITUR TEXT TO SPEECH (BACA TEKS AI) ---
+        // --- FITUR TEXT TO SPEECH ---
         function bacaTeks(encodedText) {
             let teks = decodeURIComponent(encodedText);
             teks = teks.replace(/[*#`_]/g, ''); 
-
             const synth = window.speechSynthesis;
             synth.cancel(); 
-
             const utterThis = new SpeechSynthesisUtterance(teks);
             utterThis.lang = 'id-ID';
-
             function setVoiceAndSpeak() {
                 const voices = synth.getVoices();
                 const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Indonesia') || v.name.includes('Google'));
                 if (voiceID) utterThis.voice = voiceID;
                 synth.speak(utterThis);
             }
-
-            if (synth.getVoices().length === 0) {
-                synth.onvoiceschanged = setVoiceAndSpeak;
-            } else {
-                setVoiceAndSpeak();
-            }
+            if (synth.getVoices().length === 0) synth.onvoiceschanged = setVoiceAndSpeak;
+            else setVoiceAndSpeak();
         }
 
-        // --- FITUR COPY TEXT (CUSTOM ALERT) ---
+        // --- FITUR COPY TEXT ---
         function salinTeks(encodedText) {
             const teks = decodeURIComponent(encodedText);
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(teks).then(() => {
-                    showCustomAlert("Teks berhasil disalin!");
-                }).catch(() => fallbackCopyText(teks));
-            } else {
-                fallbackCopyText(teks);
-            }
+                navigator.clipboard.writeText(teks).then(() => showCustomAlert("Teks berhasil disalin!")).catch(() => fallbackCopyText(teks));
+            } else fallbackCopyText(teks);
         }
-
         function fallbackCopyText(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
             document.body.appendChild(textArea);
             textArea.select();
-            try {
-                document.execCommand('copy');
-                showCustomAlert("Teks berhasil disalin!");
-            } catch (err) {
-                // FAILED to copy text
-            }
+            try { document.execCommand('copy'); showCustomAlert("Teks berhasil disalin!"); } catch (err) {}
             document.body.removeChild(textArea);
         }
 
-        // --- FITUR DOWNLOAD GAMBAR (CUSTOM ALERT) ---
+        // --- FITUR DOWNLOAD GAMBAR ---
         async function downloadGambar(url) {
             try {
                 const response = await fetch(url);
@@ -275,15 +257,11 @@
                 link.click();
                 document.body.removeChild(link);
                 showCustomAlert("Berhasil simpan gambar!");
-            } catch (err) {
-                console.error("Gagal mendownload gambar", err);
-            }
+            } catch (err) { console.error("Gagal mendownload gambar", err); }
         }
 
         // Local Storage System
-        function simpanChatKeStorage() {
-            localStorage.setItem('riwayatChatAI', chatHistory.innerHTML);
-        }
+        function simpanChatKeStorage() { localStorage.setItem('riwayatChatAI', chatHistory.innerHTML); }
         function muatChatDariStorage() {
             const history = localStorage.getItem('riwayatChatAI');
             if (history) chatHistory.innerHTML = history;
@@ -314,7 +292,7 @@
         function bukaModal(src) { document.getElementById('img-modal-view').src = src; document.getElementById('image-modal').classList.add('show'); }
         function tutupModal(e) { if(e.target.id === 'image-modal' || e.target.classList.contains('close-modal')) document.getElementById('image-modal').classList.remove('show'); }
 
-        // Chat System
+        // --- LOGIC PESAN UMUM ---
         function tambahPesan(teks, pengirim, imgUrl = null, isInit = false) {
             const div = document.createElement('div');
             div.className = `message ${pengirim}`;
@@ -342,8 +320,7 @@
                         <button onclick="downloadGambar('${imgUrl}')" style="background-color: var(--user-bubble); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
                             📥 Simpan Gambar
                         </button>
-                    </div>
-                `;
+                    </div>`;
             }
             
             div.innerHTML = htmlContent;
@@ -354,6 +331,64 @@
             return div;
         }
 
+        // --- FITUR BARU: FAKE STREAMING (TYPEWRITER EFFECT) ---
+        function ketikPesanAI(teks, imgUrl = null) {
+            isTyping = true;
+            
+            // 1. Buat bubble chat kosong
+            const div = document.createElement('div');
+            div.className = `message ai`;
+            chatHistory.appendChild(div);
+            
+            let i = 0;
+            const kecepatan = 3; // Kecepatan ngetik (makin besar makin cepat)
+            
+            // 2. Mulai animasi ngetik
+            const ngetikInterval = setInterval(() => {
+                i += kecepatan;
+                
+                if (i >= teks.length) {
+                    // Jika sudah selesai ngetik
+                    i = teks.length;
+                    clearInterval(ngetikInterval);
+                    
+                    // Render versi lengkap (dengan tombol copy, baca, dan gambar)
+                    renderPesanSelesai(div, teks, imgUrl);
+                } else {
+                    // Tampilkan teks yang belum lengkap (diproses pakai markdown)
+                    div.innerHTML = marked.parse(teks.substring(0, i));
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                }
+            }, 15); // Interval 15ms per render
+        }
+
+        function renderPesanSelesai(div, teks, imgUrl) {
+            const encodedText = encodeURIComponent(teks);
+            let htmlContent = marked.parse(teks);
+            
+            htmlContent += `
+                <div class="ai-actions">
+                    <button onclick="salinTeks('${encodedText}')" title="Salin">📋</button>
+                    <button onclick="bacaTeks('${encodedText}')" title="Baca">🔊</button>
+                </div>`;
+
+            if (imgUrl) {
+                htmlContent += `
+                    <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                        <img src="${imgUrl}" onclick="bukaModal(this.src)" style="cursor:zoom-in;">
+                        <button onclick="downloadGambar('${imgUrl}')" style="background-color: var(--user-bubble); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                            📥 Simpan Gambar
+                        </button>
+                    </div>`;
+            }
+
+            div.innerHTML = htmlContent;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            simpanChatKeStorage();
+            
+            isTyping = false; // Buka kunci agar user bisa balas lagi
+        }
+
         function tampilkanLoading() {
             const div = document.createElement('div'); div.className = 'typing-indicator'; div.id = 'loading';
             div.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
@@ -361,6 +396,8 @@
         }
 
         async function kirimPesan() {
+            if (isTyping) return showCustomAlert("Tunggu AI selesai mengetik ya!"); // Cegah spam jika AI sedang ngetik
+
             const teks = promptInput.value.trim();
             if (!teks && !selectedImageData) return;
 
@@ -370,7 +407,7 @@
             if (selectedImageData) payload.image = { mimeType: selectedImageData.mimeType, base64Data: selectedImageData.base64Data };
 
             promptInput.value = '';
-            promptInput.style.height = 'auto'; // Reset height
+            promptInput.style.height = 'auto'; 
             hapusGambar();
             tampilkanLoading();
 
@@ -382,23 +419,12 @@
                 if (data.error) {
                     tambahPesan("Error: " + data.error, 'ai');
                 } else {
-                    const aiBubble = tambahPesan(data.reply, 'ai');
-                    if (data.imageUrl) {
-                        aiBubble.innerHTML += `
-                            <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-                                <img src="${data.imageUrl}" onclick="bukaModal(this.src)" style="cursor:zoom-in;">
-                                <button onclick="downloadGambar('${data.imageUrl}')" style="background-color: var(--user-bubble); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
-                                    📥 Simpan Gambar
-                                </button>
-                            </div>
-                        `;
-                        simpanChatKeStorage();
-                        chatHistory.scrollTop = chatHistory.scrollHeight;
-                    }
+                    // PANGGIL FITUR MENGETIK DI SINI!
+                    ketikPesanAI(data.reply, data.imageUrl);
                 }
             } catch (error) {
                 document.getElementById('loading')?.remove();
-                tambahPesan("Gagal menghubungi server. Pastikan API Vercel berjalan.", 'ai');
+                tambahPesan("Gagal menghubungi server. Pastikan koneksi internet stabil.", 'ai');
             }
         }
     </script>
