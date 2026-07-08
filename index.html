@@ -203,10 +203,46 @@
             synth.speak(utterThis);
         }
 
-        // Fitur Copy Text
-        function salinTeks(teks) {
-            navigator.clipboard.writeText(teks);
-            alert("Teks berhasil disalin!");
+        // --- FITUR COPY TEXT (DIPERBAIKI) ---
+        function salinTeks(encodedText) {
+            const teks = decodeURIComponent(encodedText);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(teks).then(() => {
+                    alert("Teks berhasil disalin!");
+                }).catch(() => fallbackCopyText(teks));
+            } else {
+                fallbackCopyText(teks);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert("Teks berhasil disalin!");
+            } catch (err) {
+                alert("Gagal menyalin teks.");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // --- FITUR DOWNLOAD GAMBAR ---
+        async function downloadGambar(url) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'AIBibel-Image-' + new Date().getTime() + '.jpg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                alert("Gagal mendownload gambar. Coba tekan dan tahan gambarnya lalu pilih 'Simpan'.");
+            }
         }
 
         // Local Storage System
@@ -251,27 +287,40 @@
             let htmlContent = '';
             
             // Render text with Markdown if it's AI
-            const teksAman = teks ? teks.replace(/"/g, '&quot;') : ''; // Escape quotes for TTS/Copy attributes
+            const teksAman = teks ? teks.replace(/"/g, '&quot;') : ''; // Escape quotes for TTS
             if (teks && pengirim === 'ai') {
+                const encodedText = encodeURIComponent(teks); // Encode text untuk fitur Salin
                 htmlContent += marked.parse(teks);
                 // Tambahkan tombol aksi untuk AI
                 htmlContent += `
                     <div class="ai-actions">
-                        <button onclick="salinTeks('${teksAman}')" title="Salin">📋</button>
-                        <button onclick="bacaTeks('${teksAman}')" title="Bacak">🔊</button>
+                        <button onclick="salinTeks('${encodedText}')" title="Salin">📋</button>
+                        <button onclick="bacaTeks('${teksAman}')" title="Baca">🔊</button>
                     </div>`;
             } else if (teks) {
                 htmlContent += `<span>${teks.replace(/\n/g, '<br>')}</span>`;
             }
 
-            if (imgUrl) htmlContent += `<img src="${imgUrl}" onclick="bukaModal(this.src)">`;
+            if (imgUrl && pengirim === 'user') {
+                htmlContent += `<img src="${imgUrl}" onclick="bukaModal(this.src)">`;
+            } else if (imgUrl && pengirim === 'ai') {
+                // Tambahkan tombol Download jika ada gambar dari AI
+                htmlContent += `
+                    <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                        <img src="${imgUrl}" onclick="bukaModal(this.src)" style="cursor:zoom-in;">
+                        <button onclick="downloadGambar('${imgUrl}')" style="background-color: var(--user-bubble); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                            📥 Simpan Gambar
+                        </button>
+                    </div>
+                `;
+            }
             
             div.innerHTML = htmlContent;
             chatHistory.appendChild(div);
             chatHistory.scrollTop = chatHistory.scrollHeight;
             
             if(!isInit) simpanChatKeStorage();
-            return div; // Return element incase we need to append image later (like in API response)
+            return div;
         }
 
         function tampilkanLoading() {
@@ -304,7 +353,14 @@
                 } else {
                     const aiBubble = tambahPesan(data.reply, 'ai');
                     if (data.imageUrl) {
-                        aiBubble.innerHTML += `<img src="${data.imageUrl}" style="margin-top:10px" onclick="bukaModal(this.src)">`;
+                        aiBubble.innerHTML += `
+                            <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                                <img src="${data.imageUrl}" onclick="bukaModal(this.src)" style="cursor:zoom-in;">
+                                <button onclick="downloadGambar('${data.imageUrl}')" style="background-color: var(--user-bubble); color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                                    📥 Simpan Gambar
+                                </button>
+                            </div>
+                        `;
                         simpanChatKeStorage();
                         chatHistory.scrollTop = chatHistory.scrollHeight;
                     }
