@@ -121,6 +121,7 @@
     <div class="chat-container" id="chat-section">
         <div class="chat-header">
             <div class="header-actions">
+                <!-- TOMBOL BACK SVG -->
                 <button class="icon-btn" onclick="kembaliKeLanding()" title="Kembali">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -147,7 +148,7 @@
         <div class="input-area">
             <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
             <button class="icon-btn" onclick="document.getElementById('file-input').click()">📷</button>
-            <button class="icon-btn" id="btn-mic" onclick="mulaiMic()">🎤</button>
+            <!-- Tombol Mic sudah dihapus dari sini -->
             
             <textarea id="prompt" placeholder="Ketik pesan..." rows="1" oninput="autoResize(this)" onkeydown="handleEnter(event)"></textarea>
             
@@ -211,85 +212,17 @@
             }
         }
 
-        // --- FITUR VOICE INPUT (STT) DIPERBAIKI ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-        let isListening = false;
-
-        if(recognition) {
-            recognition.lang = 'id-ID';
-            recognition.continuous = false; 
-            
-            // Saat mulai mendengarkan
-            recognition.onstart = () => {
-                isListening = true;
-                const micBtn = document.getElementById('btn-mic');
-                micBtn.style.color = '#ef4444'; // Berubah jadi merah
-                micBtn.style.animation = 'blink 1.5s infinite'; // Efek kedap-kedip
-                promptInput.placeholder = "Mendengarkan suara...";
-            };
-
-            // Saat dapat hasil suara
-            recognition.onresult = (e) => { 
-                const hasil = e.results[0][0].transcript;
-                // Tambahkan spasi otomatis jika input sebelumnya tidak kosong
-                promptInput.value = promptInput.value ? promptInput.value + ' ' + hasil : hasil; 
-                autoResize(promptInput); 
-            };
-
-            // Saat error atau diblokir
-            recognition.onerror = (e) => { 
-                console.error("Mic error:", e.error);
-                if (e.error === 'not-allowed') {
-                    showCustomAlert("Izin Mic ditolak! Buka pengaturan browser untuk mengizinkan.");
-                } else if (e.error !== 'no-speech') {
-                    showCustomAlert("Gagal mendengar: " + e.error);
-                }
-                resetMicUI();
-            };
-
-            // Saat selesai mendengarkan
-            recognition.onend = () => {
-                resetMicUI();
-            };
-        }
-
-        // Fungsi untuk mengembalikan tombol Mic ke normal
-        function resetMicUI() {
-            isListening = false;
-            const micBtn = document.getElementById('btn-mic');
-            micBtn.style.color = 'var(--text-main)';
-            micBtn.style.animation = 'none';
-            promptInput.placeholder = "Ketik pesan...";
-        }
-
-        function mulaiMic() {
-            if(!recognition) return showCustomAlert("Browser tidak mendukung fitur suara (Gunakan Chrome/Safari).");
-            
-            if (isListening) {
-                recognition.stop(); // Matikan jika sedang jalan
-            } else {
-                try {
-                    recognition.start(); // Nyalakan
-                } catch(e) {
-                    console.log("Mic sedang proses dimatikan, tunggu sebentar.");
-                }
-            }
-        }
-
-        // --- FITUR TEXT TO SPEECH (DIPERBAIKI) ---
+        // --- FITUR TEXT TO SPEECH (BACA TEKS AI) ---
         function bacaTeks(encodedText) {
-            // 1. Decode teks dan bersihkan simbol markdown (*, #, `)
             let teks = decodeURIComponent(encodedText);
             teks = teks.replace(/[*#`_]/g, ''); 
 
             const synth = window.speechSynthesis;
-            synth.cancel(); // Bersihkan antrean sebelumnya biar gak nyangkut
+            synth.cancel(); 
 
             const utterThis = new SpeechSynthesisUtterance(teks);
             utterThis.lang = 'id-ID';
 
-            // 2. Fungsi untuk mengatur suara dan mulai bicara
             function setVoiceAndSpeak() {
                 const voices = synth.getVoices();
                 const voiceID = voices.find(v => v.lang === 'id-ID' || v.name.includes('Indonesia') || v.name.includes('Google'));
@@ -297,7 +230,6 @@
                 synth.speak(utterThis);
             }
 
-            // 3. Pancing browser untuk memuat daftar suara
             if (synth.getVoices().length === 0) {
                 synth.onvoiceschanged = setVoiceAndSpeak;
             } else {
@@ -326,7 +258,7 @@
                 document.execCommand('copy');
                 showCustomAlert("Teks berhasil disalin!");
             } catch (err) {
-                // FAILED to copy text (silently)
+                // FAILED to copy text
             }
             document.body.removeChild(textArea);
         }
@@ -344,7 +276,6 @@
                 document.body.removeChild(link);
                 showCustomAlert("Berhasil simpan gambar!");
             } catch (err) {
-                // FAILED to download image (silently)
                 console.error("Gagal mendownload gambar", err);
             }
         }
@@ -390,11 +321,9 @@
             
             let htmlContent = '';
             
-            // Render text with Markdown if it's AI
             if (teks && pengirim === 'ai') {
-                const encodedText = encodeURIComponent(teks); // Encode text untuk fitur Salin & Baca
+                const encodedText = encodeURIComponent(teks); 
                 htmlContent += marked.parse(teks);
-                // Tambahkan tombol aksi untuk AI
                 htmlContent += `
                     <div class="ai-actions">
                         <button onclick="salinTeks('${encodedText}')" title="Salin">📋</button>
@@ -407,7 +336,6 @@
             if (imgUrl && pengirim === 'user') {
                 htmlContent += `<img src="${imgUrl}" onclick="bukaModal(this.src)">`;
             } else if (imgUrl && pengirim === 'ai') {
-                // Tambahkan tombol Download jika ada gambar dari AI
                 htmlContent += `
                     <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
                         <img src="${imgUrl}" onclick="bukaModal(this.src)" style="cursor:zoom-in;">
