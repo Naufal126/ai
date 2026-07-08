@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
-    <!-- FIREBASE CORE & AUTH SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 
@@ -166,7 +165,6 @@
 <body>
     <div class="glow-bg"></div>
 
-    <!-- AUTHENTICATION SCREEN -->
     <div id="auth-section">
         <div class="auth-card">
             <h2 id="auth-title">Masuk ke AIBIBEL</h2>
@@ -199,7 +197,6 @@
         </div>
     </div>
 
-    <!-- SIDEBAR PANEL -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h3 style="font-weight: 700;">Riwayat Obrolan</h3>
@@ -211,19 +208,16 @@
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- LANDING PAGE -->
     <div id="landing-page">
         <h1 class="brand-title">AIBIBEL BY<br><span>NAUFAL</span></h1>
         <p class="subtitle">Personal Assistant</p>
         <button class="start-btn" onclick="masukKeChat()">Mulai Percakapan</button>
         
-        <!-- WEB DEVELOPER CREDIT BARU -->
         <div class="developer-credit">
             Web Developer: <a href="https://www.naufal.fun" target="_blank">Naufal</a>
         </div>
     </div>
 
-    <!-- CHAT CONTAINER -->
     <div class="chat-container" id="chat-section-panel">
         <div class="chat-header">
             <div class="header-actions">
@@ -275,13 +269,11 @@
         </div>
     </div>
 
-    <!-- MODAL GAMBAR -->
     <div id="image-modal" class="modal" onclick="tutupModal(event)">
         <span class="close-modal">&times;</span>
         <img class="modal-content" id="img-modal-view">
     </div>
 
-    <!-- MODAL KONFIRMASI (NEW) -->
     <div id="custom-confirm" class="modal" onclick="tutupConfirmBackground(event)">
         <div class="confirm-card">
             <p id="confirm-msg">Apakah kamu yakin?</p>
@@ -435,16 +427,7 @@
                     gantiModeAuth('login');
                 }
             } catch (error) {
-                let pesanError = error.message;
-                
-                // Ubah pesan error bawaan Firebase menjadi bahasa Indonesia
-                if (error.code === 'auth/invalid-credential') {
-                    pesanError = "Email atau password salah, atau akun belum terdaftar!";
-                } else if (error.code === 'auth/email-already-in-use') {
-                    pesanError = "Email ini sudah pernah didaftarkan!";
-                }
-                
-                showCustomAlert(pesanError);
+                showCustomAlert(error.message);
             }
         }
 
@@ -803,15 +786,30 @@
             chatHistory.appendChild(div); chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
+        // --- UPDATE PADA BAGIAN INI ---
         async function kirimPesan() {
             if (isTyping) return showCustomAlert("Tunggu AI selesai mengetik ya!"); 
 
             const teks = promptInput.value.trim();
             if (!teks && !selectedImageData) return;
 
+            // 1. Tampilkan pesan asli dari pengguna di layar chat
             tambahPesan(teks, 'user', selectedImageData ? selectedImageData.dataUrl : null);
             
-            const payload = { prompt: teks };
+            // 2. LOGIKA SMART FOOD RECOMMENDER
+            let finalPrompt = teks;
+            
+            // AI mendeteksi apakah kamu lagi nanya soal makanan/kuliner
+            const kataKunciMakanan = ['lapar', 'makan', 'kuliner', 'pedas', 'gurih', 'rekomendasi', 'jajan', 'laper'];
+            const nanyaMakanan = kataKunciMakanan.some(keyword => teks.toLowerCase().includes(keyword));
+
+            // Jika iya, AI otomatis menyisipkan selera dan lokasimu ke server secara rahasia
+            if (nanyaMakanan) {
+                finalPrompt = `Sebagai asisten pribadi, berikan rekomendasi kuliner yang detail. Ingat bahwa saya sedang berada di area Depok, Yogyakarta. Saya sangat menyukai makanan pedas dan gurih (favorit saya: Nasi Padang dengan lauk tunjang, Baso Aci, dan Ayam Geprek). Jawab dengan santai dan berikan 2-3 rekomendasi spesifik sesuai pertanyaan ini: "${teks}"`;
+            }
+
+            // 3. Siapkan payload dengan prompt yang sudah dimodifikasi (jika ada)
+            const payload = { prompt: finalPrompt };
             if (selectedImageData) payload.image = { mimeType: selectedImageData.mimeType, base64Data: selectedImageData.base64Data };
 
             promptInput.value = '';
@@ -820,7 +818,11 @@
             tampilkanLoading();
 
             try {
-                const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const response = await fetch('/api/chat', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(payload) 
+                });
                 const data = await response.json();
                 document.getElementById('loading')?.remove();
 
