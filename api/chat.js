@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     
     // Pastikan API Key di Vercel sudah disetting!
     const geminiApiKey = process.env.GEMINI_API_KEY;
-    const hfApiKey = process.env.HUGGINGFACE_API_KEY; // TAMBAHKAN INI DI VERCEL
+    const hfApiKey = process.env.HUGGINGFACE_API_KEY ? process.env.HUGGINGFACE_API_KEY.trim() : null;
 
     if (!geminiApiKey) {
         return res.status(500).json({ error: 'API Key Gemini belum disetting di Vercel!' });
