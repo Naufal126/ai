@@ -786,7 +786,7 @@
             chatHistory.appendChild(div); chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        // --- UPDATE PADA BAGIAN INI ---
+        // --- SEKARANG SUDAH MENDUKUNG LIVE GEOLOCATION ---
         async function kirimPesan() {
             if (isTyping) return showCustomAlert("Tunggu AI selesai mengetik ya!"); 
 
@@ -796,26 +796,50 @@
             // 1. Tampilkan pesan asli dari pengguna di layar chat
             tambahPesan(teks, 'user', selectedImageData ? selectedImageData.dataUrl : null);
             
-            // 2. LOGIKA SMART FOOD RECOMMENDER
+            // Simpan state awal payload
             let finalPrompt = teks;
-            
-            // AI mendeteksi apakah kamu lagi nanya soal makanan/kuliner
-            const kataKunciMakanan = ['lapar', 'makan', 'kuliner', 'pedas', 'gurih', 'rekomendasi', 'jajan', 'laper'];
-            const nanyaMakanan = kataKunciMakanan.some(keyword => teks.toLowerCase().includes(keyword));
-
-            // Jika iya, AI otomatis menyisipkan selera dan lokasimu ke server secara rahasia
-            if (nanyaMakanan) {
-                finalPrompt = `Sebagai asisten pribadi, berikan rekomendasi kuliner yang detail. Ingat bahwa saya sedang berada di area Depok, Yogyakarta. Saya sangat menyukai makanan pedas dan gurih (favorit saya: Nasi Padang dengan lauk tunjang, Baso Aci, dan Ayam Geprek). Jawab dengan santai dan berikan 2-3 rekomendasi spesifik sesuai pertanyaan ini: "${teks}"`;
-            }
-
-            // 3. Siapkan payload dengan prompt yang sudah dimodifikasi (jika ada)
-            const payload = { prompt: finalPrompt };
-            if (selectedImageData) payload.image = { mimeType: selectedImageData.mimeType, base64Data: selectedImageData.base64Data };
+            let imgPayload = selectedImageData ? { mimeType: selectedImageData.mimeType, base64Data: selectedImageData.base64Data } : null;
 
             promptInput.value = '';
             promptInput.style.height = 'auto'; 
             hapusGambar();
             tampilkanLoading();
+
+            // 2. LOGIKA SMART FOOD RECOMMENDER (LIVE LOCATION)
+            const kataKunciMakanan = ['lapar', 'makan', 'kuliner', 'pedas', 'gurih', 'rekomendasi', 'jajan', 'laper', 'haus', 'resto'];
+            const nanyaMakanan = kataKunciMakanan.some(keyword => teks.toLowerCase().includes(keyword));
+
+            if (nanyaMakanan) {
+                try {
+                    // Meminta akses lokasi perangkat secara asinkron
+                    const posisi = await new Promise((resolve, reject) => {
+                        if (!navigator.geolocation) {
+                            reject("Geolocation tidak didukung");
+                        } else {
+                            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                enableHighAccuracy: true,
+                                timeout: 5000, 
+                                maximumAge: 0
+                            });
+                        }
+                    });
+
+                    const lat = posisi.coords.latitude;
+                    const lng = posisi.coords.longitude;
+
+                    // Mengirimkan prompt dengan menyertakan koordinat live
+                    finalPrompt = `Pengguna berkata: "${teks}". Sebagai asisten pribadi, pengguna sedang meminta rekomendasi makanan. Lokasi GPS live pengguna saat ini berada di titik koordinat Latitude: ${lat} dan Longitude: ${lng}. Analisa koordinat tersebut berada di kota/daerah mana, lalu berikan 3 rekomendasi tempat makan atau kuliner terdekat yang enak di sekitar area tersebut dengan bahasa yang santai!`;
+                    
+                } catch (error) {
+                    console.warn("Gagal atau ditolak mengambil lokasi:", error);
+                    // Fallback jika user mematikan GPS atau menolak izin lokasi
+                    finalPrompt = `Pengguna berkata: "${teks}". Tolong berikan rekomendasi makanan atau resep umum yang enak, karena sistem tidak bisa mengakses lokasi live pengguna saat ini.`;
+                }
+            }
+
+            // 3. Siapkan payload akhir untuk dikirim ke Backend API kamu
+            const payload = { prompt: finalPrompt };
+            if (imgPayload) payload.image = imgPayload;
 
             try {
                 const response = await fetch('/api/chat', { 
@@ -839,3 +863,4 @@
     </script>
 </body>
 </html>
+
