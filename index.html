@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
+    <!-- FIREBASE CORE & AUTH SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
 
@@ -52,10 +53,16 @@
         .auth-card h2 { font-weight: 800; margin-bottom: 20px; }
         .auth-input { width: 100%; padding: 14px 20px; margin: 8px 0; border-radius: 50px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 0.95rem; }
         .auth-input:focus { border-color: var(--user-bubble); }
-        .auth-btn { width: 100%; background: var(--user-bubble); color: white; border: none; padding: 14px; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        
+        /* Lupa Password Posisi Baru (Bawah Kanan Password) */
+        .forgot-link-wrapper { text-align: right; width: 100%; padding-right: 15px; margin-top: -2px; margin-bottom: 12px; }
+        .forgot-link-wrapper span { font-size: 0.8rem; color: var(--user-bubble); cursor: pointer; font-weight: 500; transition: 0.2s; }
+        .forgot-link-wrapper span:hover { opacity: 0.8; }
+
+        .auth-btn { width: 100%; background: var(--user-bubble); color: white; border: none; padding: 14px; border-radius: 50px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 5px; transition: 0.2s; }
         .auth-btn:hover { opacity: 0.9; }
         .google-btn { width: 100%; background: #fff; color: #000; border: 1px solid #cbd5e1; padding: 12px; border-radius: 50px; font-weight: 500; font-size: 0.95rem; cursor: pointer; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .auth-toggle-links { margin-top: 15px; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
+        .auth-toggle-links { margin-top: 18px; font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
         .auth-toggle-links span { color: var(--user-bubble); cursor: pointer; font-weight: 500; }
 
         /* LANDING PAGE */
@@ -104,14 +111,12 @@
         .message.ai { align-self: flex-start; background-color: var(--ai-bubble); color: var(--text-main); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
         .message img { max-width: 100%; max-height: 200px; border-radius: 10px; cursor: zoom-in; display: block; margin-top: 5px; }
         
-        /* Markdown Styling inside AI bubble */
         .message.ai p { margin-bottom: 8px; }
         .message.ai p:last-child { margin-bottom: 0; }
         .message.ai pre { background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px; overflow-x: auto; margin: 8px 0; font-family: monospace; font-size: 0.85rem; }
         .message.ai code { background: rgba(0,0,0,0.1); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; }
         [data-theme="dark"] .message.ai pre, [data-theme="dark"] .message.ai code { background: rgba(255,255,255,0.1); }
         
-        /* AI Action Buttons */
         .ai-actions { display: flex; gap: 5px; margin-top: 8px; align-self: flex-end; }
         .ai-actions button { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; transition: 0.2s; display: flex; align-items: center; }
         .ai-actions button:hover { color: var(--text-main); background: rgba(128,128,128,0.1); }
@@ -126,13 +131,12 @@
         
         .send-btn { background-color: #2563eb; color: #ffffff; width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3); display: flex; justify-content: center; align-items: center; }
         
-        /* MODAL */
+        /* MODAL & ALERTS */
         .modal { display: flex; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: 0.3s; }
         .modal.show { opacity: 1; visibility: visible; }
         .modal-content { max-width: 90%; max-height: 90%; border-radius: 12px; transition: transform 0.2s; }
         .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; cursor: pointer; z-index: 1001; }
 
-        /* CUSTOM POPUP ALERT */
         .custom-popup { display: none; position: fixed; z-index: 1001; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.9); background-color: var(--popup-bg); backdrop-filter: blur(10px); color: var(--text-main); padding: 20px 30px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: var(--popup-shadow); opacity: 0; transition: all 0.3s ease; }
         .custom-popup.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .custom-popup-content { text-align: center; font-weight: 500; font-size: 1.1rem; }
@@ -147,11 +151,18 @@
 <body>
     <div class="glow-bg"></div>
 
+    <!-- AUTHENTICATION SCREEN -->
     <div id="auth-section">
         <div class="auth-card">
             <h2 id="auth-title">Masuk ke AIBIBEL</h2>
             <input type="email" id="auth-email" class="auth-input" placeholder="Alamat Email">
             <input type="password" id="auth-password" class="auth-input" placeholder="Password">
+            
+            <!-- Posisi Baru Lupa Password -->
+            <div id="forgot-wrapper" class="forgot-link-wrapper">
+                <span onclick="gantiModeAuth('forgot')">Lupa Password?</span>
+            </div>
+
             <button id="auth-main-btn" class="auth-btn" onclick="prosesAuthUtama()">Masuk</button>
             
             <button id="google-login-btn" class="google-btn" onclick="loginGoogle()">
@@ -161,11 +172,11 @@
 
             <div class="auth-toggle-links">
                 <p id="toggle-register-text">Belum punya akun? <span onclick="gantiModeAuth('register')">Daftar Sekarang</span></p>
-                <p id="toggle-forgot-text"><span onclick="gantiModeAuth('forgot')">Lupa Password?</span></p>
             </div>
         </div>
     </div>
 
+    <!-- SIDEBAR PANEL -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h3 style="font-weight: 700;">Riwayat Obrolan</h3>
@@ -177,12 +188,14 @@
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
+    <!-- LANDING PAGE -->
     <div id="landing-page">
         <h1 class="brand-title">AIBIBEL BY<br><span>NAUFAL</span></h1>
         <p class="subtitle">Personal Assistant</p>
         <button class="start-btn" onclick="masukKeChat()">Mulai Percakapan</button>
     </div>
 
+    <!-- CHAT CONTAINER -->
     <div class="chat-container" id="chat-section-panel">
         <div class="chat-header">
             <div class="header-actions">
@@ -267,7 +280,7 @@
         // MULTI CHAT SYSTEM STATE & USER CONTEXT
         let allChats = [];
         let currentChatId = null;
-        let currentAuthMode = 'login'; // login, register, forgot
+        let currentAuthMode = 'login'; 
         let currentUserUid = null;
 
         // Monitor Status Login Firebase
@@ -298,7 +311,7 @@
             const mainBtn = document.getElementById('auth-main-btn');
             const googleBtn = document.getElementById('google-login-btn');
             const toggleRegister = document.getElementById('toggle-register-text');
-            const toggleForgot = document.getElementById('toggle-forgot-text');
+            const forgotWrapper = document.getElementById('forgot-wrapper');
 
             if (mode === 'login') {
                 title.innerText = "Masuk ke AIBIBEL";
@@ -306,21 +319,21 @@
                 mainBtn.innerText = "Masuk";
                 googleBtn.style.display = "flex";
                 toggleRegister.innerHTML = `Belum punya akun? <span onclick="gantiModeAuth('register')">Daftar Sekarang</span>`;
-                toggleForgot.style.display = "block";
+                forgotWrapper.style.display = "block"; 
             } else if (mode === 'register') {
                 title.innerText = "Daftar Akun Baru";
                 passwordInput.style.display = "block";
                 mainBtn.innerText = "Daftar";
                 googleBtn.style.display = "none";
                 toggleRegister.innerHTML = `Sudah punya akun? <span onclick="gantiModeAuth('login')">Masuk di sini</span>`;
-                toggleForgot.style.display = "none";
+                forgotWrapper.style.display = "none"; 
             } else if (mode === 'forgot') {
                 title.innerText = "Pulihkan Password";
                 passwordInput.style.display = "none";
                 mainBtn.innerText = "Kirim Link Reset";
                 googleBtn.style.display = "none";
                 toggleRegister.innerHTML = `Kembali ke <span onclick="gantiModeAuth('login')">Halaman Login</span>`;
-                toggleForgot.style.display = "none";
+                forgotWrapper.style.display = "none"; 
             }
         }
 
@@ -447,7 +460,7 @@
             } catch (err) { console.error(err); }
         }
 
-        // --- CORE MULTI-CHAT STORAGE SYSTEM (DENGAN SCOPE USER UID) ---
+        // --- CORE MULTI-CHAT STORAGE SYSTEM ---
         function muatSemuaChatDariStorage() {
             if (!currentUserUid) return;
 
