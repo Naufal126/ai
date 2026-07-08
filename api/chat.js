@@ -14,7 +14,6 @@ export default async function handler(req, res) {
     try {
         const teks = prompt ? prompt.toLowerCase() : "";
         
-        // Deteksi perintah gambar
         const adaKataGambar = teks.includes("gambar") || teks.includes("gambarin") || teks.includes("gambarkan") || teks.includes("foto") || teks.includes("lukisan");
         const adaKataPerintah = teks.includes("buat") || teks.includes("bikin") || teks.includes("generate") || teks.includes("minta") || teks.includes("tolong") || teks.includes("tampilkan");
         const perintahLangsung = teks.startsWith("gambar ") || teks.startsWith("foto ");
@@ -29,15 +28,16 @@ export default async function handler(req, res) {
 
         if (mintaGambar) {
             if (!segmindApiKey) {
-                return res.status(500).json({ error: 'API Key Segmind belum dipasang di Vercel! Silakan isi SEGMIND_API_KEY dulu.' });
+                return res.status(500).json({ error: 'API Key Segmind belum dipasang di Vercel!' });
             }
 
             const promptBersih = dapatkanPromptBersih(prompt);
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
-            // --- JALUR MURNI SEGMIND (FLUX.1) ---
+            // --- JALUR MURNI SEGMIND (SDXL 1.0) ---
             try {
-                const segmindEndpoint = "https://api.segmind.com/v1/fast-flux-schnell";
+                // Pindah dari FLUX ke SDXL 1.0 yang lebih ramah akun gratisan
+                const segmindEndpoint = "https://api.segmind.com/v1/sdxl1.0-txt2img";
                 
                 const segmindResponse = await fetch(segmindEndpoint, {
                     method: "POST",
@@ -45,11 +45,14 @@ export default async function handler(req, res) {
                         "x-api-key": segmindApiKey,
                         "Content-Type": "application/json"
                     },
-                    // PERBAIKAN: Menggunakan format parameter standar Segmind FLUX
                     body: JSON.stringify({
                         prompt: promptFinal,
-                        steps: 4, 
-                        seed: Math.floor(Math.random() * 1000000000), 
+                        negative_prompt: "ugly, blurry, poor quality, bad anatomy",
+                        samples: 1,
+                        scheduler: "Euler a", // Sampler standar SDXL
+                        num_inference_steps: 25,
+                        guidance_scale: 7,
+                        seed: -1, // -1 artinya selalu acak
                         width: 1024,
                         height: 1024
                     })
@@ -58,7 +61,7 @@ export default async function handler(req, res) {
                 if (!segmindResponse.ok) {
                     const errorText = await segmindResponse.text();
                     console.error("Detail Error Segmind:", errorText);
-                    return res.status(500).json({ error: `Segmind gagal memproses (Status ${segmindResponse.status}). Pastikan prompt aman dan tidak melanggar sistem, atau cek sisa kredit harianmu.` });
+                    return res.status(500).json({ error: `Segmind gagal memproses (Status ${segmindResponse.status}). Error detail: ${errorText}` });
                 }
 
                 const arrayBuffer = await segmindResponse.arrayBuffer();
@@ -66,7 +69,7 @@ export default async function handler(req, res) {
                 const dataUrlVal = `data:image/jpeg;base64,${base64Image}`;
 
                 return res.status(200).json({ 
-                    reply: "Ini gambar dari Segmind (FLUX.1) spesial buat kamu:", 
+                    reply: "Ini gambar dari Segmind (SDXL) spesial buat kamu, Fal:", 
                     imageUrl: dataUrlVal 
                 });
 
