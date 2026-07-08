@@ -121,7 +121,6 @@
     <div class="chat-container" id="chat-section">
         <div class="chat-header">
             <div class="header-actions">
-                <!-- TOMBOL BACK DIPERBARUI -->
                 <button class="icon-btn" onclick="kembaliKeLanding()" title="Kembali">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -212,17 +211,70 @@
             }
         }
 
-        // Fitur Voice Input (STT)
+        // --- FITUR VOICE INPUT (STT) DIPERBAIKI ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+        let isListening = false;
+
         if(recognition) {
             recognition.lang = 'id-ID';
-            recognition.onresult = (e) => { promptInput.value += e.results[0][0].transcript; autoResize(promptInput); };
-            recognition.onerror = () => alert("Gagal mendengarkan suara.");
+            recognition.continuous = false; 
+            
+            // Saat mulai mendengarkan
+            recognition.onstart = () => {
+                isListening = true;
+                const micBtn = document.getElementById('btn-mic');
+                micBtn.style.color = '#ef4444'; // Berubah jadi merah
+                micBtn.style.animation = 'blink 1.5s infinite'; // Efek kedap-kedip
+                promptInput.placeholder = "Mendengarkan suara...";
+            };
+
+            // Saat dapat hasil suara
+            recognition.onresult = (e) => { 
+                const hasil = e.results[0][0].transcript;
+                // Tambahkan spasi otomatis jika input sebelumnya tidak kosong
+                promptInput.value = promptInput.value ? promptInput.value + ' ' + hasil : hasil; 
+                autoResize(promptInput); 
+            };
+
+            // Saat error atau diblokir
+            recognition.onerror = (e) => { 
+                console.error("Mic error:", e.error);
+                if (e.error === 'not-allowed') {
+                    showCustomAlert("Izin Mic ditolak! Buka pengaturan browser untuk mengizinkan.");
+                } else if (e.error !== 'no-speech') {
+                    showCustomAlert("Gagal mendengar: " + e.error);
+                }
+                resetMicUI();
+            };
+
+            // Saat selesai mendengarkan
+            recognition.onend = () => {
+                resetMicUI();
+            };
         }
+
+        // Fungsi untuk mengembalikan tombol Mic ke normal
+        function resetMicUI() {
+            isListening = false;
+            const micBtn = document.getElementById('btn-mic');
+            micBtn.style.color = 'var(--text-main)';
+            micBtn.style.animation = 'none';
+            promptInput.placeholder = "Ketik pesan...";
+        }
+
         function mulaiMic() {
-            if(!recognition) return alert("Browser tidak mendukung fitur suara.");
-            recognition.start();
+            if(!recognition) return showCustomAlert("Browser tidak mendukung fitur suara (Gunakan Chrome/Safari).");
+            
+            if (isListening) {
+                recognition.stop(); // Matikan jika sedang jalan
+            } else {
+                try {
+                    recognition.start(); // Nyalakan
+                } catch(e) {
+                    console.log("Mic sedang proses dimatikan, tunggu sebentar.");
+                }
+            }
         }
 
         // --- FITUR TEXT TO SPEECH (DIPERBAIKI) ---
@@ -342,7 +394,7 @@
             if (teks && pengirim === 'ai') {
                 const encodedText = encodeURIComponent(teks); // Encode text untuk fitur Salin & Baca
                 htmlContent += marked.parse(teks);
-                // Tambahkan tombol aksi untuk AI (KODE TTS DIPERBARUI DI SINI)
+                // Tambahkan tombol aksi untuk AI
                 htmlContent += `
                     <div class="ai-actions">
                         <button onclick="salinTeks('${encodedText}')" title="Salin">📋</button>
