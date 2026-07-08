@@ -28,51 +28,53 @@ export default async function handler(req, res) {
         };
 
         if (mintaGambar) {
+            if (!segmindApiKey) {
+                return res.status(500).json({ error: 'API Key Segmind belum dipasang di Vercel! Silakan isi SEGMIND_API_KEY dulu.' });
+            }
+
             const promptBersih = dapatkanPromptBersih(prompt);
             const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
 
-            // --- JALUR UTAMA: SEGMIND API (FLUX.1 SCHNELL) ---
-            if (segmindApiKey) {
-                try {
-                    const segmindEndpoint = "https://api.segmind.com/v1/fast-flux-schnell";
-                    
-                    const segmindResponse = await fetch(segmindEndpoint, {
-                        method: "POST",
-                        headers: {
-                            "x-api-key": segmindApiKey,
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            prompt: promptFinal,
-                            steps: 4, 
-                            seed: Math.floor(Math.random() * 10000000), 
-                            sampler: "euler",
-                            aspect_ratio: "1:1",
-                            image_format: "jpeg"
-                        })
-                    });
+            // --- JALUR MURNI SEGMIND (TANPA FALLBACK) ---
+            try {
+                const segmindEndpoint = "https://api.segmind.com/v1/fast-flux-schnell";
+                
+                const segmindResponse = await fetch(segmindEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "x-api-key": segmindApiKey,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        prompt: promptFinal,
+                        steps: 4, 
+                        seed: Math.floor(Math.random() * 10000000), 
+                        sampler: "euler",
+                        aspect_ratio: "1:1",
+                        image_format: "jpeg"
+                    })
+                });
 
-                    if (segmindResponse.ok) {
-                        const arrayBuffer = await segmindResponse.arrayBuffer();
-                        const base64Image = Buffer.from(arrayBuffer).toString('base64');
-                        const dataUrlVal = `data:image/jpeg;base64,${base64Image}`;
-
-                        return res.status(200).json({ 
-                            reply: "Ini gambar hasil generate dari Segmind (FLUX.1), kualitasnya HD banget spesial buat kamu:", 
-                            imageUrl: dataUrlVal 
-                        });
-                    }
-                } catch (segmindError) {
-                    console.error("Segmind Error, mengalihkan ke cadangan:", segmindError);
+                if (!segmindResponse.ok) {
+                    // Kalau error dari Segmind (misal kuota habis/API salah), tangkap errornya
+                    const errorText = await segmindResponse.text();
+                    console.error("Detail Error Segmind:", errorText);
+                    return res.status(500).json({ error: `Segmind gagal memproses (Status ${segmindResponse.status}). Cek kuota atau API Key kamu.` });
                 }
-            }
 
-            // --- 🛡️ JALUR CADANGAN AMAN (POLLINATIONS) ---
-            const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(promptFinal)}?width=1024&height=1024&nologo=true`;
-            return res.status(200).json({ 
-                reply: "Ini gambar yang kamu minta, spesial dari Bibel:", 
-                imageUrl: fallbackUrl 
-            });
+                const arrayBuffer = await segmindResponse.arrayBuffer();
+                const base64Image = Buffer.from(arrayBuffer).toString('base64');
+                const dataUrlVal = `data:image/jpeg;base64,${base64Image}`;
+
+                return res.status(200).json({ 
+                    reply: "Ini gambar dari Segmind (FLUX.1) spesial buat kamu:", 
+                    imageUrl: dataUrlVal 
+                });
+
+            } catch (segmindError) {
+                console.error("Gagal fetch ke Segmind:", segmindError);
+                return res.status(500).json({ error: `Koneksi ke Segmind terputus: ${segmindError.message}` });
+            }
 
         } else {
             // --- LOGIKA CHAT TEXT GEMINI 1.5 FLASH ---
