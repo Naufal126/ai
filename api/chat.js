@@ -39,7 +39,7 @@ export default async function handler(req, res) {
             // ==========================================
             // FETCH KE HUGGING FACE API (FLUX.1-SCHNELL)
             // ==========================================
-            const hfResponse = await fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
+            const hfResponse = await fetch('https://api.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${hfApiKey}`,
