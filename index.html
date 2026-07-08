@@ -786,17 +786,37 @@
             chatHistory.appendChild(div); chatHistory.scrollTop = chatHistory.scrollHeight;
         }
 
-        // --- SEKARANG SUDAH MENDUKUNG LIVE GEOLOCATION ---
+        // --- UPDATE: SUDAH MENDUKUNG RIWAYAT CHAT LENGKAP & LIVE GEOLOCATION ---
         async function kirimPesan() {
             if (isTyping) return showCustomAlert("Tunggu AI selesai mengetik ya!"); 
 
             const teks = promptInput.value.trim();
             if (!teks && !selectedImageData) return;
 
-            // 1. Tampilkan pesan asli dari pengguna di layar chat
+            // 1. SCAN LAYAR CHAT UNTUK MEMBUAT ARRAY HISTORY SEBELUM PESAN BARU MASUK
+            const nodes = Array.from(chatHistory.children);
+            const historyPaket = nodes.map(node => {
+                if (node.classList.contains('user')) {
+                    const userText = node.querySelector('span')?.innerText || "";
+                    return { role: 'user', parts: [{ text: userText }] };
+                } else if (node.classList.contains('ai') && node.id !== 'loading') {
+                    // Kloning node agar bisa membuang elemen UI aksi (Copy/Audio/Image Save) tanpa merusak tampilan screen
+                    const clonedNode = node.cloneNode(true);
+                    const actions = clonedNode.querySelector('.ai-actions');
+                    if (actions) actions.remove();
+                    const imgContainer = clonedNode.querySelector('div');
+                    if (imgContainer) imgContainer.remove();
+
+                    const aiText = clonedNode.innerText.trim();
+                    return { role: 'model', parts: [{ text: aiText }] };
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            // 2. Tampilkan pesan asli dari pengguna di layar chat
             tambahPesan(teks, 'user', selectedImageData ? selectedImageData.dataUrl : null);
             
-            // Simpan state awal payload
+            // Simpan state awal prompt
             let finalPrompt = teks;
             let imgPayload = selectedImageData ? { mimeType: selectedImageData.mimeType, base64Data: selectedImageData.base64Data } : null;
 
@@ -805,7 +825,7 @@
             hapusGambar();
             tampilkanLoading();
 
-            // 2. LOGIKA SMART FOOD RECOMMENDER (LIVE LOCATION)
+            // 3. LOGIKA SMART FOOD RECOMMENDER (LIVE LOCATION)
             const kataKunciMakanan = ['lapar', 'makan', 'kuliner', 'pedas', 'gurih', 'rekomendasi', 'jajan', 'laper', 'haus', 'resto'];
             const nanyaMakanan = kataKunciMakanan.some(keyword => teks.toLowerCase().includes(keyword));
 
@@ -827,18 +847,20 @@
                     const lat = posisi.coords.latitude;
                     const lng = posisi.coords.longitude;
 
-                    // Mengirimkan prompt dengan menyertakan koordinat live
+                    // Menyisipkan konteks koordinat ke prompt
                     finalPrompt = `Pengguna berkata: "${teks}". Sebagai asisten pribadi, pengguna sedang meminta rekomendasi makanan. Lokasi GPS live pengguna saat ini berada di titik koordinat Latitude: ${lat} dan Longitude: ${lng}. Analisa koordinat tersebut berada di kota/daerah mana, lalu berikan 3 rekomendasi tempat makan atau kuliner terdekat yang enak di sekitar area tersebut dengan bahasa yang santai!`;
                     
                 } catch (error) {
                     console.warn("Gagal atau ditolak mengambil lokasi:", error);
-                    // Fallback jika user mematikan GPS atau menolak izin lokasi
                     finalPrompt = `Pengguna berkata: "${teks}". Tolong berikan rekomendasi makanan atau resep umum yang enak, karena sistem tidak bisa mengakses lokasi live pengguna saat ini.`;
                 }
             }
 
-            // 3. Siapkan payload akhir untuk dikirim ke Backend API kamu
-            const payload = { prompt: finalPrompt };
+            // 4. Masukkan pesan paling baru yang sudah diproses ke dalam paket riwayat chat
+            historyPaket.push({ role: 'user', parts: [{ text: finalPrompt }] });
+
+            // 5. Siapkan payload berisi array history lengkap untuk dikirim ke Backend API
+            const payload = { history: historyPaket };
             if (imgPayload) payload.image = imgPayload;
 
             try {
@@ -853,7 +875,7 @@
                 if (data.error) {
                     tambahPesan("Error: " + data.error, 'ai');
                 } else {
-                    ketikPesanAI(data.reply, data.imageUrl);
+                    ketikPesanAI(data.reply, data.imageUrl || data.dataUrl || null);
                 }
             } catch (error) {
                 document.getElementById('loading')?.remove();
@@ -863,4 +885,3 @@
     </script>
 </body>
 </html>
-
