@@ -71,6 +71,11 @@
         .subtitle { color: var(--text-muted); font-size: 1rem; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 40px; }
         .start-btn { background: var(--header-bg); border: 1px solid var(--border-color); backdrop-filter: blur(10px); color: var(--text-main); padding: 14px 32px; font-size: 1rem; font-weight: 600; border-radius: 50px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); }
         .start-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(37, 99, 235, 0.15); }
+        
+        /* CREDIT DEVELOPER */
+        .developer-credit { position: absolute; bottom: 30px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .developer-credit a { color: var(--user-bubble); text-decoration: none; font-weight: 700; transition: 0.3s; }
+        .developer-credit a:hover { opacity: 0.8; text-decoration: underline; }
 
         /* SIDEBAR MULTI-CHAT */
         .sidebar { position: fixed; left: 0; top: 0; height: 100dvh; width: 280px; background-color: var(--input-bg); backdrop-filter: blur(20px); border-right: 1px solid var(--border-color); z-index: 100; transform: translateX(-100%); transition: transform 0.3s ease; display: flex; flex-direction: column; padding: 20px; }
@@ -211,6 +216,11 @@
         <h1 class="brand-title">AIBIBEL BY<br><span>NAUFAL</span></h1>
         <p class="subtitle">Personal Assistant</p>
         <button class="start-btn" onclick="masukKeChat()">Mulai Percakapan</button>
+        
+        <!-- WEB DEVELOPER CREDIT BARU -->
+        <div class="developer-credit">
+            Web Developer: <a href="https://www.naufal.fun" target="_blank">Naufal</a>
+        </div>
     </div>
 
     <!-- CHAT CONTAINER -->
