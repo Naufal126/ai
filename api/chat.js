@@ -98,7 +98,10 @@ export default async function handler(req, res) {
             return res.status(200).json({ reply: replyText });
         }
         
-    } catch (error) {
-        return res.status(500).json({ error: `Terjadi kesalahan internal: ${error.message}` });
+    }    } catch (error) {
+        // Tambahan logika untuk membongkar akar masalah (cause) dari fetch failed
+        const detailPenyebab = error.cause ? error.cause.message : "Tidak ada detail tambahan dari server";
+        return res.status(500).json({ error: `Error: ${error.message} | Penyebab Asli: ${detailPenyebab}` });
     }
 }
+ 
