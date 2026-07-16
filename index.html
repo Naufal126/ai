@@ -85,14 +85,14 @@
         .close-sidebar-btn { background: transparent; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; }
         .new-chat-btn { background: var(--user-bubble); color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 15px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .new-chat-btn:hover { opacity: 0.9; }
-        .chat-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .chat-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .chat-item { padding: 12px; border-radius: 10px; background: rgba(128,128,128,0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; border: 1px solid transparent; transition: 0.2s; color: var(--text-main); }
         .chat-item:hover, .chat-item.active { background: rgba(128,128,128,0.1); border-color: var(--border-color); }
         .chat-item.active { border-color: var(--user-bubble); font-weight: 500; }
         .chat-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; margin-right: 10px; text-align: left; }
         .delete-chat-btn { background: transparent; border: none; cursor: pointer; opacity: 0.5; transition: 0.2s; font-size: 0.95rem; }
         .delete-chat-btn:hover { opacity: 1; }
-        .logout-btn { background: #ef4444; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        .logout-btn { background: #ef4444; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .logout-btn:hover { opacity: 0.9; }
 
         /* CHAT CONTAINER */
@@ -103,8 +103,14 @@
         .header-actions { display: flex; gap: 4px; align-items: center; }
         .icon-btn { background: transparent; border: none; color: var(--text-main); cursor: pointer; padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .icon-btn:hover { background-color: rgba(128,128,128,0.1); }
-        .chat-header h2 { font-size: 1.1rem; font-weight: 700; flex-grow: 1; text-align: center; }
         
+        /* CSS TAMBAHAN UNTUK AI MODE SELECTOR & HEADER */
+        .header-center { display: flex; flex-direction: column; align-items: center; flex-grow: 1; padding: 0 10px; }
+        .chat-header h2 { font-size: 1rem; font-weight: 700; text-align: center; margin-bottom: 4px; }
+        .mode-selector { display: flex; background: rgba(128,128,128,0.15); border-radius: 20px; padding: 4px; margin: 0 auto; width: fit-content; gap: 4px; }
+        .mode-btn { background: transparent; border: none; padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: all 0.3s ease; }
+        .mode-btn.active { background: var(--user-bubble); color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
         .chat-history { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
         .chat-history::-webkit-scrollbar { width: 5px; } .chat-history::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.3); border-radius: 10px; }
         
@@ -204,6 +210,15 @@
         </div>
         <button class="new-chat-btn" onclick="buatChatBaru()">+ Sesi Baru</button>
         <div class="chat-list" id="chat-list"></div>
+        
+        <button class="new-chat-btn" style="background: var(--user-bubble); color: white; margin-bottom: 8px; margin-top: auto;" onclick="kembaliKeLanding()">
+            🏠 Dashboard
+        </button>
+
+        <button class="new-chat-btn" style="background: rgba(128,128,128,0.15); color: var(--text-main); margin-bottom: 0;" onclick="toggleTheme()">
+            🌓 Ganti Tema
+        </button>
+        
         <button class="logout-btn" onclick="logout()">Keluar Akun</button>
     </div>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -228,17 +243,19 @@
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
-                <button class="icon-btn" onclick="kembaliKeLanding()" title="Kembali">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                </button>
-                <button class="icon-btn" onclick="hapusSemuaChat()" title="Kosongkan Obrolan Ini">🗑️</button>
             </div>
-            <h2>AI by Naufal</h2>
+            
+            <div class="header-center">
+                <h2>AI by Naufal</h2>
+                <div class="mode-selector">
+                    <button id="btn-mode-pro" class="mode-btn active" onclick="gantiAiMode('pro')">Bibel Pro</button>
+                    <button id="btn-mode-flash" class="mode-btn" onclick="gantiAiMode('flash')">Bibel Flash</button>
+                </div>
+            </div>
             <div class="header-actions">
-                <button class="icon-btn" onclick="toggleTheme()" title="Ganti Tema">🌓</button>
+                <button class="icon-btn" onclick="hapusSemuaChat()" title="Kosongkan Obrolan Ini">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
             </div>
         </div>
         
@@ -315,8 +332,24 @@
         let currentAuthMode = 'login'; 
         let currentUserUid = null;
         
-        // VARIABEL UNTUK CUSTOM CONFIRM
+        // VARIABEL UNTUK CUSTOM CONFIRM & AI MODE
         let callbackKonfirmasi = null;
+        let currentAiMode = 'pro'; // DEFAULT NYA PRO (GEMINI)
+
+        // FUNGSI GANTI MODE AI (BARU)
+        function gantiAiMode(mode) {
+            currentAiMode = mode;
+            document.getElementById('btn-mode-pro').classList.remove('active');
+            document.getElementById('btn-mode-flash').classList.remove('active');
+            
+            document.getElementById('btn-mode-' + mode).classList.add('active');
+            
+            if(mode === 'pro') {
+                showCustomAlert("Berpindah ke Bibel Pro");
+            } else {
+                showCustomAlert("Berpindah ke Bibel Flash");
+            }
+        }
 
         // Monitor Status Login Firebase
         auth.onAuthStateChanged(user => {
@@ -859,8 +892,11 @@
             // 4. Masukkan pesan paling baru yang sudah diproses ke dalam paket riwayat chat
             historyPaket.push({ role: 'user', parts: [{ text: finalPrompt }] });
 
-            // 5. Siapkan payload berisi array history lengkap untuk dikirim ke Backend API
-            const payload = { history: historyPaket };
+            // 5. MENGIRIM PAYLOAD KE BACKEND (MENAMBAHKAN VARIABLE MODEL MODE)
+            const payload = { 
+                history: historyPaket,
+                modelMode: currentAiMode // <--- INFO MODE DIKIRIM KE VERCEL
+            };
             if (imgPayload) payload.image = imgPayload;
 
             try {
