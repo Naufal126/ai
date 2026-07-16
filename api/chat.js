@@ -3,82 +3,102 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Sekarang kita tangkap 'history' (array), bukan cuma 'prompt' tunggal
-    const { history, image } = req.body;
-    
-    // Pastikan API Key Gemini di Vercel sudah disetting!
+    const { history, image, modelMode } = req.body;
     const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    if (!geminiApiKey) {
-        return res.status(500).json({ error: 'API Key Gemini belum disetting di Vercel!' });
-    }
 
     if (!history || history.length === 0) {
         return res.status(400).json({ error: 'Riwayat obrolan (history) tidak ditemukan!' });
     }
 
     try {
-        // Ambil pesan terakhir dari user di dalam array history sebagai prompt utama
         const lastUserTurn = history[history.length - 1];
         const promptAsli = lastUserTurn && lastUserTurn.parts ? lastUserTurn.parts[0].text : "";
         const teks = promptAsli ? promptAsli.toLowerCase() : "";
         
-        // Logika deteksi apakah user minta generate gambar
-        const adaKataGambar = teks.includes("gambar") || teks.includes("gambarin") || teks.includes("gambarkan") || teks.includes("foto") || teks.includes("lukisan");
+        // ==========================================
+        // 1. GLOBAL LOGIC: GENERATE GAMBAR (BERLAKU DI PRO & FLASH)
+        // ==========================================
+        const adaKataGambar = teks.includes("gambar") || teks.includes("gambarin") || teks.includes("gambarkan") || teks.includes("foto") || teks.includes("lukisan") || teks.includes("ilustrasi");
         const adaKataPerintah = teks.includes("buat") || teks.includes("bikin") || teks.includes("generate") || teks.includes("minta") || teks.includes("tolong") || teks.includes("tampilkan");
-        const perintahLangsung = teks.startsWith("gambar ") || teks.startsWith("foto ");
+        const perintahLangsung = teks.startsWith("gambar ") || teks.startsWith("foto ") || teks.startsWith("draw ");
 
-        // Kita hanya generate gambar kalau user TIDAK sedang mengirimkan gambar (bukan input multimodal)
         const mintaGambar = (perintahLangsung || (adaKataGambar && adaKataPerintah)) && !image;
 
-        const dapatkanPromptBersih = (p) => {
-            return p.replace(/(buatkan|buat|bikin|bikinkan|generate|gambarin|gambarkan|minta|tolong|tampilkan|gambar|foto|lukisan|ilustrasi|dong|bisa|ga|yang|jal)/gi, "")
-                    .replace(/\s+/g, " ")
-                    .trim();
-        };
-
         if (mintaGambar) {
+            const dapatkanPromptBersih = (p) => {
+                return p.replace(/(buatkan|buat|bikin|bikinkan|generate|gambarin|gambarkan|minta|tolong|tampilkan|gambar|foto|lukisan|ilustrasi|dong|bisa|ga|yang|jal|draw|please)/gi, "")
+                        .replace(/\s+/g, " ")
+                        .trim();
+            };
+
             const promptBersih = dapatkanPromptBersih(promptAsli);
-            const promptFinal = promptBersih || "beautiful tropical fish, cinematic lighting, 4k resolution"; 
-
-            // Encode prompt agar aman dimasukkan ke dalam URL
+            const promptFinal = promptBersih || "beautiful digital art, cinematic lighting, 4k resolution"; 
             const encodedPrompt = encodeURIComponent(promptFinal);
-
-            // ==========================================
-            // POLLINATIONS AI - FLUX MODEL
-            // ==========================================
             const imageUrl = `https://image.pollinations.ai/p/${encodedPrompt}?model=flux&width=1024&height=1024&enhance=true`;
 
             return res.status(200).json({ 
-                reply: `Ini dia gambarnya! Aku pakai model **Flux (via Pollinations)** yang super HD, gratis, dan anti-error saldo habis, Fal:`, 
+                reply: `Ini dia gambarnya! 🎨:`, 
                 imageUrl: imageUrl 
             });
+        }
 
-        } else {
-            // ==========================================
-            // LOGIKA CHAT TEXT GEMINI (DENGAN INGATAN/HISTORY)
-            // ==========================================
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
+        // ==========================================
+        // 2. LOGIKA CHAT TEXT : BIBEL FLASH (POLLINATIONS TEXT)
+        // ==========================================
+        if (modelMode === 'flash') {
+            // Karena API Text Pollinations mirip OpenAI, kita ubah format history-nya dulu
+            const formattedMessages = [
+                { role: 'system', content: 'Namamu adalah Bibel Flash, AI asisten virtual ciptaan Naufal. Jawablah dengan bahasa santai, ramah, dan ringkas.' }
+            ];
 
-            // Jika user melampirkan gambar untuk dianalisis, tempelkan datanya ke part pesan terakhir
-            if (image && lastUserTurn && lastUserTurn.role === 'user') {
-                lastUserTurn.parts.push({ 
-                    inlineData: { 
-                        mimeType: image.mimeType, 
-                        data: image.base64Data 
-                    } 
+            // Mapping history Gemini ke format yang bisa dibaca Pollinations Text
+            history.forEach(turn => {
+                formattedMessages.push({
+                    role: turn.role === 'model' ? 'assistant' : 'user',
+                    content: turn.parts[0].text
                 });
+            });
+
+            const response = await fetch('https://text.pollinations.ai/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: formattedMessages })
+            });
+
+            if (!response.ok) throw new Error("Gagal terhubung ke server flash");
+            
+            // Pollinations me-return langsung teks jawabannya
+            const replyText = await response.text(); 
+            
+            return res.status(200).json({ reply: replyText });
+        }
+
+
+        // ==========================================
+        // 3. LOGIKA CHAT TEXT : BIBEL PRO (GEMINI)
+        // ==========================================
+        if (modelMode === 'pro') {
+            if (!geminiApiKey) return res.status(500).json({ error: 'API Key Gemini belum disetting!' });
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`;
+            let contentsForGemini = JSON.parse(JSON.stringify(history));
+
+            if (image && image.base64Data && image.mimeType) {
+                const totalTurns = contentsForGemini.length;
+                if (contentsForGemini[totalTurns - 1].role === 'user') {
+                    const cleanBase64 = image.base64Data.replace(/^data:image\/\w+;base64,/, "");
+                    contentsForGemini[totalTurns - 1].parts.push({ 
+                        inlineData: { mimeType: image.mimeType, data: cleanBase64 } 
+                    });
+                }
             }
 
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemInstruction: {
-                        parts: [{ text: "Namamu adalah Bibel Ai, sebuah AI asisten virtual. Penciptamu bernama Naufal. Tolong jawab semua pertanyaan dengan ramah." }]
-                    },
-                    // Kita langsung mengumpankan seluruh isi 'history' ke 'contents' agar Gemini ingat chat sebelumnya
-                    contents: history
+                    systemInstruction: { parts: [{ text: "Namamu adalah Bibel Pro, AI asisten virtual ciptaan Naufal. Jawab dengan ramah dan cerdas." }] },
+                    contents: contentsForGemini
                 })
             });
 
@@ -88,9 +108,10 @@ export default async function handler(req, res) {
             const replyText = data.candidates[0].content.parts[0].text;
             return res.status(200).json({ reply: replyText });
         }
+
+        return res.status(400).json({ error: 'Mode AI tidak ditemukan!' });
         
     } catch (error) {
-        const detailPenyebab = error.cause ? error.cause.message : "Tidak ada detail tambahan dari server";
-        return res.status(500).json({ error: `Error: ${error.message} | Penyebab Asli: ${detailPenyebab}` });
+        return res.status(500).json({ error: `Error: ${error.message}` });
     }
 }
