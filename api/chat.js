@@ -1,16 +1,17 @@
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const { history, image, modelMode } = req.body;
-    const geminiApiKey = process.env.GEMINI_API_KEY;
-
-    if (!history || history.length === 0) {
-        return res.status(400).json({ error: 'Riwayat obrolan (history) tidak ditemukan!' });
-    }
+export async function onRequestPost(context) {
+    const { request, env } = context;
 
     try {
+        // 1. Ambil data body di Cloudflare menggunakan request.json()
+        const { history, image, modelMode } = await request.json();
+        
+        // 2. Cara mengambil Environment Variables di Cloudflare
+        const geminiApiKey = env.GEMINI_API_KEY;
+
+        if (!history || history.length === 0) {
+            return Response.json({ error: 'Riwayat obrolan (history) tidak ditemukan!' }, { status: 400 });
+        }
+
         const lastUserTurn = history[history.length - 1];
         const promptAsli = lastUserTurn && lastUserTurn.parts ? lastUserTurn.parts[0].text : "";
         const teks = promptAsli ? promptAsli.toLowerCase() : "";
@@ -36,22 +37,21 @@ export default async function handler(req, res) {
             const encodedPrompt = encodeURIComponent(promptFinal);
             const imageUrl = `https://image.pollinations.ai/p/${encodedPrompt}?model=flux&width=1024&height=1024&enhance=true`;
 
-            return res.status(200).json({ 
+            // Menggunakan Response.json() di Cloudflare
+            return Response.json({ 
                 reply: `Ini dia gambarnya! 🎨:`, 
                 imageUrl: imageUrl 
-            });
+            }, { status: 200 });
         }
 
         // ==========================================
         // 2. LOGIKA CHAT TEXT : BIBEL FLASH (POLLINATIONS TEXT)
         // ==========================================
         if (modelMode === 'flash') {
-            // Karena API Text Pollinations mirip OpenAI, kita ubah format history-nya dulu
             const formattedMessages = [
                 { role: 'system', content: 'Namamu adalah Bibel Flash, AI asisten virtual ciptaan Naufal. Jawablah dengan bahasa santai, ramah, dan ringkas.' }
             ];
 
-            // Mapping history Gemini ke format yang bisa dibaca Pollinations Text
             history.forEach(turn => {
                 formattedMessages.push({
                     role: turn.role === 'model' ? 'assistant' : 'user',
@@ -67,10 +67,8 @@ export default async function handler(req, res) {
 
             if (!response.ok) throw new Error("Gagal terhubung ke server flash");
             
-            // Pollinations me-return langsung teks jawabannya
             const replyText = await response.text(); 
-            
-            return res.status(200).json({ reply: replyText });
+            return Response.json({ reply: replyText }, { status: 200 });
         }
 
 
@@ -78,7 +76,7 @@ export default async function handler(req, res) {
         // 3. LOGIKA CHAT TEXT : BIBEL PRO (GEMINI)
         // ==========================================
         if (modelMode === 'pro') {
-            if (!geminiApiKey) return res.status(500).json({ error: 'API Key Gemini belum disetting!' });
+            if (!geminiApiKey) return Response.json({ error: 'API Key Gemini belum disetting!' }, { status: 500 });
 
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`;
             let contentsForGemini = JSON.parse(JSON.stringify(history));
@@ -103,15 +101,15 @@ export default async function handler(req, res) {
             });
 
             const data = await response.json();
-            if (data.error) return res.status(500).json({ error: data.error.message });
+            if (data.error) return Response.json({ error: data.error.message }, { status: 500 });
 
             const replyText = data.candidates[0].content.parts[0].text;
-            return res.status(200).json({ reply: replyText });
+            return Response.json({ reply: replyText }, { status: 200 });
         }
 
-        return res.status(400).json({ error: 'Mode AI tidak ditemukan!' });
+        return Response.json({ error: 'Mode AI tidak ditemukan!' }, { status: 400 });
         
     } catch (error) {
-        return res.status(500).json({ error: `Error: ${error.message}` });
+        return Response.json({ error: `Error: ${error.message}` }, { status: 500 });
     }
 }
