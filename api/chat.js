@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
         if (modelMode === 'pro') {
             if (!geminiApiKey) return res.status(500).json({ error: 'API Key Gemini belum disetting!' });
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
             let contentsForGemini = JSON.parse(JSON.stringify(history));
 
             if (image && image.base64Data && image.mimeType) {
