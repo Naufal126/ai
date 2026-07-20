@@ -1,4 +1,4 @@
-Export default async function handler(req, res) {
+module.exports = async (req, res) => {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -46,12 +46,10 @@ Export default async function handler(req, res) {
         // 2. LOGIKA CHAT TEXT : BIBEL FLASH (POLLINATIONS TEXT)
         // ==========================================
         if (modelMode === 'flash') {
-            // Karena API Text Pollinations mirip OpenAI, kita ubah format history-nya dulu
             const formattedMessages = [
                 { role: 'system', content: 'Namamu adalah Bibel Flash, AI asisten virtual ciptaan Naufal. Jawablah dengan bahasa santai, ramah, dan ringkas.' }
             ];
 
-            // Mapping history Gemini ke format yang bisa dibaca Pollinations Text
             history.forEach(turn => {
                 formattedMessages.push({
                     role: turn.role === 'model' ? 'assistant' : 'user',
@@ -67,7 +65,6 @@ Export default async function handler(req, res) {
 
             if (!response.ok) throw new Error("Gagal terhubung ke server flash");
             
-            // Pollinations me-return langsung teks jawabannya
             const replyText = await response.text(); 
             
             return res.status(200).json({ reply: replyText });
