@@ -77,7 +77,7 @@ module.exports = async (req, res) => {
         if (modelMode === 'pro') {
             if (!geminiApiKey) return res.status(500).json({ error: 'API Key Gemini belum disetting!' });
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/Gemini-3.1-Pro:generateContent?key=${geminiApiKey}`;
             let contentsForGemini = JSON.parse(JSON.stringify(history));
 
             if (image && image.base64Data && image.mimeType) {
@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemInstruction: { parts: [{ text: "Namamu adalah Bibel Pro, AI asisten virtual ciptaan Naufal. Jawab dengan ramah dan cerdas." }] },
+                    systemInstruction: { parts: [{ text: "Namamu adalah Bibel Pro, AI asisten virtual ciptaan Naufal. Jawab dengan ramah dan cerdas. jika ada yang tanya kamu model apa jawab aja buatan developer naufal" }] },
                     contents: contentsForGemini
                 })
             });
