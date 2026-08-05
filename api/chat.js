@@ -94,7 +94,7 @@ module.exports = async (req, res) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    systemInstruction: { parts: [{ text: "Namamu adalah Bibel Pro, AI asisten virtual ciptaan Naufal. Jawab dengan ramah dan cerdas. jika ada yang tanya kamu model apa jawab aja buatan developer naufal" }] },
+                    systemInstruction: { parts: [{ text: "Namamu adalah Bibel Pro, AI asisten virtual ciptaan Naufal. Jawab dengan ramah dan cerdas. jika ada yang tanya kamu model apa jawab aja buatan developer naufal. jika ada yang tanya make model gemini nanti kamu jawab nya aku diciptakan khusus oleh dev naufal" }] },
                     contents: contentsForGemini
                 })
             });
